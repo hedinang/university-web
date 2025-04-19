@@ -1,0 +1,29 @@
+.login {
+    text-align: center;
+
+    .img {
+        display: flex;
+        justify-content: center;
+        padding-top: 50px;
+
+        img {
+            width: 100%;
+            object-fit: cover;
+            max-width: 300px
+        }
+    }
+
+    .form {
+        display: inline-block;
+        width: 100%;
+        max-width: 600px;
+        padding: 20px;
+
+        .login-button {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px
+        }
+    }
+}

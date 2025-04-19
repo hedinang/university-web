@@ -1,0 +1,132 @@
+.general-modal {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  .button {
+    width: 100px;
+  }
+}
+
+.list-group {
+  display: flex;
+  min-height: 700px;
+}
+
+@media (max-width: 768px) {
+  .list-group {
+    min-height: 600px;
+  }
+}
+
+.list-group-column {
+  flex: 1;
+
+}
+
+.list-group-column:nth-child(1) {
+  flex-basis: 30.33% !important;
+}
+.list-group-column:nth-child(2) {
+  background-color: #eef0f1;
+  flex-basis: 70.67% !important;
+}
+
+.list-group-column h3 {
+  margin-top: 0;
+}
+
+.list-group-column ul {
+  list-style: none;
+  padding: 0;
+}
+
+.tab-active {
+  background-color: #becde6 !important;
+  font-weight: bold;
+}
+
+.list-group-column ul li {
+  background-color: white;
+  color: black;
+  cursor: pointer;
+  padding: 1rem 2rem;
+  border-radius: 0.25rem;
+
+  &:hover {
+    background-color: #eaedf0;
+  }
+}
+
+.settings-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  display: block;
+}
+
+.settings-left-titles {
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.settings-right-titles {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.settings-note-text {
+  color: #7589a3;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.settings-option-content {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+@media only screen and (min-width: 768px) {
+  .btn-back-to-settings {
+    display: none;
+  }
+  .desktop {
+    display: block !important;
+  }
+  .mobile {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .btn-back-to-settings {
+    display: block;
+  }
+  .desktop {
+    display: none !important;
+  }
+  .mobile {
+    display: block !important;
+  }
+}
+
+.icon {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    background-color: #e5e5e5;
+    cursor: pointer;
+  }
+}
