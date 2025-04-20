@@ -67,12 +67,12 @@ function Login(props) {
         ? Cookies.set("auth", encryptAuthData)
         : Cookies.remove("auth");
 
-      if (!searchParams.get("callback")) {
-        window.location.href = CHAT_WEB + "?token=" + result.data.token;
-      } else {
-        window.location.href =
-          searchParams.get("callback") + "?token=" + result.data.token;
-      }
+      // if (!searchParams.get("callback")) {
+      //   window.location.href = CHAT_WEB + "?token=" + result.data.token;
+      // } else {
+      //   window.location.href =
+      //     searchParams.get("callback") + "?token=" + result.data.token;
+      // }
     } catch (error) {
     } finally {
       setLoading(false);

@@ -7,6 +7,7 @@ export const useSideBarStore = create((set) => ({
   isProfileDetail: false,
   isMenuOrganizationBook: true,
   isNotification: false,
+  isWorkManagementOptions: true,
 
   setIsSelectedConversation: (value) =>
     set((state) => ({ isSelectedConversation: value })),
@@ -25,4 +26,9 @@ export const useSideBarStore = create((set) => ({
   switchIsWorkManagement: () => set((state) => ({ isWorkManagement: !state.isWorkManagement })),
 
   setIsNotification: (value) => set((state) => ({ isNotification: value })),
+
+  switchIsWorkManagementOptions: () =>
+    set((state) => ({
+      isWorkManagementOptions: !state.isWorkManagementOptions,
+    })),
 }));

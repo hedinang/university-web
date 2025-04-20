@@ -8,6 +8,7 @@ export const SALE = "/sale";
 export const AUTHOR = "/author";
 export const DASHBOARD = "/dashboard";
 export const USER = "/api/user";
+export const COUNCIL = "/api/council";
 export const CONVERSATION = "/api/conversation";
 export const MESSAGE = "/api/message";
 export const ORGANIZATION = "/api/organization";
