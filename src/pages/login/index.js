@@ -67,6 +67,7 @@ function Login(props) {
         ? Cookies.set("auth", encryptAuthData)
         : Cookies.remove("auth");
 
+      navigate("/admin-setting/user");
       // if (!searchParams.get("callback")) {
       //   window.location.href = CHAT_WEB + "?token=" + result.data.token;
       // } else {
@@ -132,9 +133,9 @@ function Login(props) {
 
   return (
     <div className="login">
-      <div className="img">
+      {/* <div className="img">
         <img src={winitechLogo} alt=""></img>
-      </div>
+      </div> */}
       <div className="form">
         <Form
           form={form}
