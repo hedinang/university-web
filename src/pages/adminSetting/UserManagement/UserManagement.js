@@ -36,7 +36,7 @@ const UserManagement = () => {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [userSearch, setUserSearch] = useState({
     limit,
-    skip: 0,
+    page: 1,
     userName: null,
     isActive: true,
   });
@@ -171,12 +171,12 @@ const UserManagement = () => {
       const result = await apiFactory.userApi.getUserList(userSearch);
 
       if (result?.status === 200) {
-        if (result?.data?.length < limit) {
-          setIsLoadMoreData(false);
-        }
+        // if (result?.data?.length < limit) {
+        //   setIsLoadMoreData(false);
+        // }
 
         setUserList(
-          result?.data?.map((r) => ({
+          result?.data?.items?.map((r) => ({
             ...r,
             birthday: r?.birthday
               ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
@@ -184,7 +184,7 @@ const UserManagement = () => {
           }))
         );
 
-        if (result?.data?.length > 0) data = result?.data;
+        // if (result?.data?.length > 0) data = result?.data;
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
@@ -472,7 +472,7 @@ const UserManagement = () => {
               <Table
                 columns={columns}
                 dataSource={userList}
-                pagination={false}
+                // pagination={false}
                 loading={isLoading}
                 size={"middle"}
                 className="max-h-[1000px]"
