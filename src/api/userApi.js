@@ -23,7 +23,7 @@ class UserApi extends BaseApi {
   }
 
   listPerson(param) {
-    return this.post(`${USER}/list`, param);
+    return this.post(`${USER}/admin/list`, param);
   }
 
   getByEmail(param) {

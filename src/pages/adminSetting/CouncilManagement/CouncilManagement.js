@@ -36,7 +36,7 @@ const CouncilManagement = () => {
   const [isOpenUserModal, setIsOpenUserModal] = useState(false);
   const [isRemoveUserModal, setIsRemoveUserModal] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedCouncil, setSelectedCouncil] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
   const lastObserver = useRef();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
@@ -140,7 +140,7 @@ const CouncilManagement = () => {
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
     setIsOpenUserModal(false);
-    setSelectedUser(null);
+    setSelectedCouncil(null);
   };
 
   const cancelRemoveModal = () => {
@@ -261,12 +261,12 @@ const CouncilManagement = () => {
   };
 
   const onDoubleClick = (record) => {
-    setSelectedUser(record);
+    setSelectedCouncil(record);
     setIsOpenUserModal(true);
   };
 
   const getSelectedColor = (record) => {
-    if (record?.userId === selectedUser?.userId) return "bg-red";
+    if (record?.userId === selectedCouncil?.userId) return "bg-red";
   };
 
   // useEffect(() => {
@@ -394,7 +394,7 @@ const CouncilManagement = () => {
             onClick={onAdd}
             style={{ zoom: isMobile && "0.9" }}
           >
-            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create User"}
+            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Council"}
           </Button>
         </div>
       </div>
@@ -562,15 +562,16 @@ const CouncilManagement = () => {
           isModalOpen={isOpenUserModal}
           cancelModal={cancelCreateModal}
           title={
-            selectedUser
+            selectedCouncil
               ? languageMap?.["as.menu.user.update.title"] ?? "Update Council"
               : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create Council"
           }
           // setUserList={setUserList}
           // userList={userList}
-          editingUser={selectedUser}
+          selectedCouncil={selectedCouncil}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
           isActive={userSearch?.isActive}
+          setCouncilList={setCouncilList}
         />
       )}
     </div>

@@ -1,19 +1,10 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Checkbox,
-  DatePicker,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Spin,
-} from "antd";
-import dayjs from "dayjs";
-import React, { useMemo, useState } from "react";
+import { Button, Checkbox, Form, Input, Modal, Select, Spin } from "antd";
+import { useCallback, useEffect, useState } from "react";
+import { FaMinus, FaPlus } from "react-icons/fa6";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 import apiFactory from "../../../api";
-import { ROLE_TYPE } from "../../../config/Constant";
 import { useInfoUser } from "../../../store/UserStore";
 import { GeneralModal } from "../GeneralModal";
 
@@ -21,28 +12,25 @@ const CreateCouncilModal = ({
   isModalOpen,
   cancelModal,
   title,
-  editingUser,
+  selectedCouncil,
   setUserList,
   userList,
   isActive,
+  setCouncilList,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
   const [isOpenModalConfirmSave, setIsOpenModalConfirmSave] = useState(null);
+  const [memberList, setMemberList] = useState([
+    { councilMemberId: uuidv4(), councilRole: "MEMBER" },
+  ]);
+  const [teacherList, setTeacherList] = useState([]);
+  const [choseTeacherList, setChoseTeacherList] = useState([]);
+
+  const [retainTeacherList, setRetainTeacherList] = useState([]);
   const { languageMap } = useInfoUser();
   const [council, setCouncil] = useState({
-    ...editingUser,
-    memberList: [
-      {
-        councilId: "6183e1e4-660d-4783-8df5-156a5d143f28",
-        userId: "8f713281-5722-4530-bb1d-563c33583a50",
-        name: "TRẦN THỊ BBBB",
-        status: "ACTIVE",
-        councilRole: "MEMBER",
-      },
-    ],
-    roleCode: editingUser ? editingUser?.roleCode : "STUDENT",
-    birthday: editingUser?.birthday ? dayjs(editingUser?.birthday) : null,
+    ...selectedCouncil,
   });
 
   const [form] = Form.useForm();
@@ -51,90 +39,6 @@ const CreateCouncilModal = ({
     if (e.key === "Enter") {
       e.preventDefault();
     }
-  };
-
-  const onCreate = async (request) => {
-    try {
-      const result = await apiFactory.userApi.createUser(request);
-
-      if (result?.status !== 200) {
-        toast.error(result?.message);
-        return;
-      }
-
-      if (!isActive) {
-        const filteredUserList = userList?.filter(
-          (user) => user?.userId !== result?.data?.userId
-        );
-        setUserList([...filteredUserList]);
-        cancelModal();
-        return;
-      }
-
-      if (userList?.some((user) => user?.userId === result?.data?.userId)) {
-        const updatedUserList = userList?.map((user) => {
-          if (user?.userId === result?.data?.userId) {
-            return {
-              ...result?.data,
-              birthday: result?.data?.birthday
-                ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-                : null,
-              isNew: true,
-            };
-          }
-
-          return { ...user, isNew: false };
-        });
-
-        setUserList([...updatedUserList]);
-      } else {
-        const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
-
-        updatedUserList?.unshift({
-          ...result?.data,
-          birthday: result?.data?.birthday
-            ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-            : null,
-          isNew: true,
-        });
-
-        setUserList([...updatedUserList]);
-      }
-
-      cancelModal();
-    } catch (error) {}
-  };
-
-  const onUpdate = async (request) => {
-    const result = await apiFactory.userApi.updateUser(request);
-
-    if (result?.status !== 200) {
-      toast.error(result?.message);
-      return;
-    }
-
-    const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
-
-    const userIndex = updatedUserList?.findIndex(
-      (usr) => usr?.username === request?.username
-    );
-
-    updatedUserList[userIndex] = {
-      ...result?.data,
-      birthday: result?.data?.birthday
-        ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-        : null,
-      isNew: true,
-    };
-
-    setUserList(
-      [...updatedUserList]?.filter((user) => {
-        if (user?.status === "ACTIVE" && isActive) return user;
-
-        if (user?.status === "INACTIVE" && !isActive) return user;
-      })
-    );
-    cancelModal();
   };
 
   const handleResetPassword = async () => {
@@ -158,82 +62,196 @@ const CreateCouncilModal = ({
     form.submit();
   };
 
-  const handleCheckExistedUser = async () => {
-    try {
-      const rs = await apiFactory.userApi.checkExistedUser(
-        form.getFieldValue("userId")
-      );
-
-      if (rs?.status === 200) {
-        if (rs?.data) {
-          setIsOpenModalConfirmSave(true);
-        } else {
-          form.submit();
-        }
-      }
-    } catch (error) {
-      cancelModal();
-    }
-  };
-
   const onFinish = async (values) => {
-    if (values?.roleCode?.trim() !== ROLE_TYPE.SYSTEM) {
-      if (!values?.username?.trim()) {
-        toast.warn("Please enter username");
-        return;
-      }
-
-      if (!values?.name?.trim()) {
-        toast.warn("Please enter Name");
-        return;
-      }
-
-      const regex = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d-]+$/;
-
-      // if (!regex.test(values?.username?.trim())) {
-      //   toast.warn("UserId must contain both letters and numbers");
-      //   return;
-      // }
+    if (
+      memberList?.findIndex((member) => member?.councilRole === "HOST") === -1
+    ) {
+      toast.error("Have to have at least 1 teacher with role is host");
+      return;
     }
 
     setIsLoading(true);
 
-    const formatValue = {
-      ...values,
-      userId: values?.userId?.trim(),
-      name: values?.name?.trim(),
+    const result = await apiFactory.councilApi.storeCouncil({
+      councilId: selectedCouncil?.councilId ? selectedCouncil?.councilId : null,
+      councilName: values?.councilName,
+      year: values?.year,
+      status: values?.status,
+      teacherList: memberList,
+    });
+
+    if (selectedCouncil?.councilId) {
+      setCouncilList((prev) => {
+        const prevIndex = prev?.findIndex(
+          (p) => p?.councilId === selectedCouncil?.councilId
+        );
+
+        if (prevIndex === -1) return prev;
+        prev[prevIndex] = result?.data;
+        return [...prev];
+      });
+    } else {
+      setCouncilList((prev) => [...prev, result?.data]);
+    }
+
+    cancelModal();
+    setIsLoading(false);
+  };
+
+  const addMember = () => {
+    setMemberList([
+      ...memberList,
+      {
+        councilMemberId: uuidv4(),
+        councilRole: "MEMBER",
+      },
+    ]);
+  };
+
+  const minusMember = (councilMemberId) => {
+    const memberIndex = memberList?.findIndex(
+      (m) => m?.councilMemberId === councilMemberId
+    );
+    memberList?.splice(memberIndex, 1);
+    setMemberList([...memberList]);
+  };
+
+  const onChangeMember = (teacherId, member) => {
+    const teacherIndex = teacherList?.findIndex(
+      (teacher) => teacher?.value === teacherId
+    );
+
+    const memberIndex = memberList?.findIndex(
+      (m) => m?.councilMemberId === member?.councilMemberId
+    );
+
+    memberList[memberIndex] = {
+      councilMemberId: memberList[memberIndex]?.councilMemberId,
+      key: teacherList?.[teacherIndex]?.label,
+      value: teacherList?.[teacherIndex]?.value,
+      councilRole: "MEMBER",
+      memberId: teacherList?.[teacherIndex]?.value,
     };
 
+    setMemberList([...memberList]);
+    setChoseTeacherList([...choseTeacherList, member]);
+  };
+
+  const onChangeMemberRole = (value, member) => {
+    const memberIndex = memberList?.findIndex(
+      (m) => m?.councilMemberId === member?.councilMemberId
+    );
+
+    if (value?.target?.checked) {
+      memberList?.forEach((member) => (member.councilRole = "MEMBER"));
+    }
+
+    memberList[memberIndex].councilRole = value?.target?.checked
+      ? "HOST"
+      : "MEMBER";
+    setMemberList([...memberList]);
+  };
+
+  const generateMemberList = useCallback(() => {
+    return (
+      <div className="flex flex-col gap-[10px]">
+        {retainTeacherList?.length > 0 && (
+          <div className="flex gap-[10px]">
+            <Button
+              // ref={tourStepRef3}
+              shape="circle"
+              className="bg-[#2a56b9]  text-[white]"
+              size="small"
+              onClick={addMember}
+              icon={<FaPlus className="text-[18px]" />}
+            />
+          </div>
+        )}
+        {memberList?.map((member) => {
+          return (
+            <div className="flex justify-between items-center" key={member?.id}>
+              <div className="w-[70%]">
+                <Select
+                  size={"middle"}
+                  value={member?.value}
+                  options={retainTeacherList}
+                  onChange={(value) => onChangeMember(value, member)}
+                />
+              </div>
+              <Checkbox
+                disabled={!member?.value}
+                checked={member?.councilRole === "HOST"}
+                onChange={(value) => onChangeMemberRole(value, member)}
+              />
+              <Button
+                shape="circle"
+                className="bg-[#2a56b9]  text-[white]"
+                size="small"
+                onClick={() => minusMember(member?.councilMemberId)}
+                icon={<FaMinus className="text-[18px]" />}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [memberList, retainTeacherList]);
+
+  const fetchCouncilList = async () => {
     try {
-      if (editingUser) {
-        await onUpdate(formatValue);
-      } else {
-        await onCreate(formatValue);
+      setIsLoading(true);
+      const result = await apiFactory.userApi.listPerson({
+        role: "TEACHER",
+      });
+
+      if (result?.status === 200) {
+        setTeacherList(
+          result?.data?.map((r) => ({
+            value: r?.userId,
+            label: r?.name,
+          }))
+        );
       }
     } catch (error) {
-      console.error("Error fetching alarm list data:", error);
+      console.error("Error fetching project data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const optionsRoleCode = useMemo(
-    () => [
-      {
-        value: ROLE_TYPE.STUDENT,
-        label: languageMap?.["as.menu.user.roleCode.normal"] ?? "STUDENT",
-      },
-      {
-        value: ROLE_TYPE.TEACHER,
-        label: languageMap?.["as.menu.user.roleCode.admin"] ?? "TEACHER",
-      },
-      {
-        value: ROLE_TYPE.ADMIN,
-        label: languageMap?.["as.menu.user.roleCode.system"] ?? "ADMIN",
-      },
-    ],
-    [editingUser, languageMap]
-  );
+  useEffect(() => {
+    fetchCouncilList();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCouncil) return;
+
+    console.log(selectedCouncil);
+
+    setMemberList(
+      selectedCouncil?.memberList?.map((member) => ({
+        ...member,
+        label: member?.name,
+        value: member?.userId,
+        memberId: member?.userId,
+      }))
+    );
+  }, [selectedCouncil]);
+
+  useEffect(() => {
+    setRetainTeacherList(
+      teacherList?.map((teacher) => {
+        if (
+          memberList?.findIndex(
+            (member) => member?.value === teacher?.value
+          ) === -1
+        )
+          return teacher;
+
+        return { ...teacher, disabled: true };
+      })
+    );
+  }, [memberList, teacherList]);
 
   return (
     <Modal
@@ -242,7 +260,6 @@ const CreateCouncilModal = ({
       footer={false}
       closeIcon={false}
       onCancel={cancelModal}
-      //   title={languageMap?.["modal.labelManagement.title"] ?? "Label management"}
       title={title}
       closable={true}
     >
@@ -260,26 +277,6 @@ const CreateCouncilModal = ({
         }}
         initialValues={council}
       >
-        {/* <Form.Item
-          name="userId"
-          label={languageMap?.["as.menu.user.update.userID"] ?? "User ID"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-            {
-              pattern: /^[A-Za-z0-9-]+$/,
-              message:
-                languageMap?.["as.menu.user.message.requiredUserId"] ??
-                "Only letters, numbers, and hyphens (-) are allowed!",
-            },
-          ]}
-          normalize={(value) => (value ? value.toUpperCase() : "")}
-        >
-          <Input maxLength={30} type="text" disabled={editingUser} />
-        </Form.Item> */}
         <Form.Item
           name="councilName"
           label={languageMap?.["as.menu.user.update.name"] ?? "Council name"}
@@ -304,10 +301,10 @@ const CreateCouncilModal = ({
                 languageMap?.["as.menu.user.message.required"] ?? "Required!",
             },
           ]}
-          normalize={(value) => (value ? value.toUpperCase() : "")}
+          // normalize={(value) => (value ? value.toUpperCase() : "")}
         >
-          {/* <Input maxLength={30} type="text" /> */}
-          <DatePicker picker="year" />
+          <Input maxLength={30} />
+          {/* <DatePicker picker="year" /> */}
         </Form.Item>
         <Form.Item
           name="memberList"
@@ -319,31 +316,8 @@ const CreateCouncilModal = ({
                 languageMap?.["as.menu.user.message.required"] ?? "Required!",
             },
           ]}
-          normalize={(value) => (value ? value.toUpperCase() : "")}
         >
-          <div className="flex justify-between">
-            <div className="w-[70%]">
-              <Select
-                size={"middle"}
-                defaultValue={true}
-                options={[
-                  {
-                    value: true,
-                    label:
-                      languageMap?.["as.menu.user.update.activeSelect"] ??
-                      "Active",
-                  },
-                  {
-                    value: false,
-                    label:
-                      languageMap?.["as.menu.user.update.inactiveSelect"] ??
-                      "Inactive",
-                  },
-                ]}
-              />
-            </div>
-            <Checkbox />
-          </div>
+          {generateMemberList()}
         </Form.Item>
         <Form.Item
           name="status"
@@ -352,7 +326,6 @@ const CreateCouncilModal = ({
         >
           <Select
             size={"middle"}
-            defaultValue={true}
             options={[
               {
                 value: true,
@@ -380,23 +353,14 @@ const CreateCouncilModal = ({
               {languageMap?.["as.menu.user.update.btnCancel"] ?? "Cancel"}
             </Button>
             <Button
+              htmlType="submit"
               type="primary"
               className="bg-[#4db74d]"
-              onClick={() =>
-                editingUser ? form.submit() : handleCheckExistedUser()
-              }
+              // onClick={form.submit()}
             >
-              {editingUser
+              {selectedCouncil
                 ? languageMap?.["as.menu.user.update.btnUpdate"] ?? "Update"
                 : languageMap?.["as.menu.user.update.btnCreate"] ?? "Create"}
-            </Button>
-            <Button
-              type="primary"
-              className="bg-[#4096FF]"
-              onClick={() => setIsOpenModalResetPW(true)}
-            >
-              {languageMap?.["as.menu.user.update.btnResetPassword"] ??
-                "Reset password"}
             </Button>
           </div>
         )}

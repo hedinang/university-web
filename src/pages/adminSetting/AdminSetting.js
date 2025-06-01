@@ -1,7 +1,8 @@
 import { LeftOutlined } from "@ant-design/icons";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import adminSettingLogo from "../../assets/admin-setting.png";
+import { CustomAvatar } from "../../components/avatar/CustomAvatar";
 import {
   KEY_MENU_ADMIN_SETTING,
   MENU_ADMIN_SETTING,
@@ -10,14 +11,20 @@ import {
 import { useSideBarStore } from "../../store/SideBarStore";
 import { useInfoUser } from "../../store/UserStore";
 import "./style.scss";
+import { Avatar, Divider } from "antd";
+import { getAvatar, getColor, getColorFromInitial } from "../../utils/Utils";
 
 const AdminSetting = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { languageMap } = useInfoUser();
+  const { user, languageMap } = useInfoUser();
   const [chosedMenuItem, setChosedMenuItem] = useState("USER");
-  const { switchIsWorkManagementOptions, isWorkManagementOptions } =
-    useSideBarStore((state) => state);
+  const {
+    switchIsWorkManagementOptions,
+    isWorkManagementOptions,
+    isProfileDetail,
+    switchIsProfileDetail,
+  } = useSideBarStore((state) => state);
   const [workManagementHeight, setWorkManagementHeight] = useState(
     window.innerHeight
   );
@@ -130,11 +137,19 @@ const AdminSetting = () => {
                   }}
                   id="work-management-container"
                 >
-                  <div className="flex justify-center">
-                    <img
-                      src={adminSettingLogo}
-                      alt="logo"
-                      className="h-[77.22px]"
+                  <div
+                    className="flex justify-center p-[10px]"
+                    onClick={() => {
+                      switchIsProfileDetail();
+                    }}
+                  >
+                    <CustomAvatar
+                      person={{
+                        name: "NGUYEN VAN A",
+                        username: "NGUYEN VAN A",
+                        avatar:
+                          "https://ava-grp-talk.zadn.vn/9/9/b/3/6/360/8a42b70def9c6ec663113bbdd8dd66c2.jpg",
+                      }}
                     />
                   </div>
                   {MENU_ADMIN_SETTING.map((item) =>
@@ -143,6 +158,77 @@ const AdminSetting = () => {
                 </div>
               </div>
             </div>
+            {/* {isProfileDetail && (
+              <div
+                className="profile"
+                // ref={infoRef}
+              >
+                <div className="flex bg-[#e2e3e5] p-2 w-full items-center">
+                  <div className="me-3">
+                    <div className="relative avatarWrapper inline-block ">
+                      <Avatar
+                        style={{
+                          backgroundColor: getColorFromInitial(user?.name[0]),
+                          color: getColor(user?.name[0]),
+                        }}
+                        size={80}
+                        src={user?.avatar}
+                      >
+                        {user?.name[0]}
+                      </Avatar>
+                    </div>
+                  </div>
+                  <div>
+                    <div>
+                      <h3 className="text-base text-[#23497c] font-bold ">
+                        {user?.name}
+                      </h3>
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-xs text-[#23497c] break-all">
+                        {user?.userId}
+                      </h6>
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-xs text-[#23497c] break-all">
+                        {user?.email}
+                      </h6>
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-xs text-[#23497c] break-all">
+                        {user?.phone}
+                      </h6>
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-xs text-[#23497c] break-all">
+                        {user?.mood}
+                      </h6>
+                    </div>
+                  </div>
+                </div>
+
+                <Divider className=" mt-0" />
+                <button
+                  className="profile-item"
+                  // onClick={() => setIsModalProfileOpen(true)}
+                >
+                  {languageMap?.["menu.profile.myProfile"] ?? "My Profile"}
+                </button>
+                <button
+                  className="profile-item"
+                  // onClick={openModalSettings}
+                >
+                  {languageMap?.["menu.profile.setting"] ?? "Setting"}
+                </button>
+                <Divider />
+                <button
+                  className="profile-item"
+                  // onClick={logout}
+                >
+                  {languageMap?.["menu.profile.logout"] ?? "Logout"}
+                </button>
+              </div>
+            )} */}
             <div className="work-content h-[100vh] overflow-y-auto bg-white">
               <Outlet />
             </div>

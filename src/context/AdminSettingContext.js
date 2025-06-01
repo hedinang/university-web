@@ -69,7 +69,7 @@ export const AdminSettingProvider = ({ children }) => {
       if (user.roleCode === "ADMIN") {
         setIsVerify(true);
       } else {
-        navigate("/conversation")
+        navigate("/conversation");
       }
     }
   }, [user]);
