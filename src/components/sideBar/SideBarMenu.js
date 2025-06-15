@@ -48,13 +48,16 @@ const SideBarMenu = () => {
           navigate("/council");
           break;
         case "sponsorship":
-          switchIsWorkManagement();
+          // switchIsWorkManagement();
+          navigate("/sponsorship");
           break;
         case "topic":
-          switchIsAdminSetting();
+          // switchIsAdminSetting();
+          navigate("/topic");
           break;
         case "question":
-          switchIsAdminSetting();
+          navigate("/question");
+          // switchIsAdminSetting();
           break;
         default:
           break;

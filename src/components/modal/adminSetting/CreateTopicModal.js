@@ -6,12 +6,23 @@ import { NumericFormat } from "react-number-format";
 import apiFactory from "../../../api";
 import { useInfoUser } from "../../../store/UserStore";
 
+const topicType = [
+  { label: "PROJECT", value: "PROJECT" },
+  { label: "A", value: "A" },
+];
+
 const CreateTopicModal = ({
   isModalOpen,
   cancelModal,
   title,
   selectedTopic,
+  topicList,
   setTopicList,
+  isActive,
+  setPagination,
+  pagination,
+  setTopicSearch,
+  setHighLight,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [teacherList, setTeacherList] = useState([]);
@@ -46,17 +57,65 @@ const CreateTopicModal = ({
     });
 
     if (selectedTopic?.topicId) {
-      setTopicList((prev) => {
-        const prevIndex = prev?.findIndex(
-          (p) => p?.topicId === selectedTopic?.topicId
+      if (pagination?.current === 1) {
+        const updatedTopicList = topicList?.map(({ isNew, ...rest }) => rest);
+
+        const topicIndex = updatedTopicList?.findIndex(
+          (topic) => topic?.topicId === selectedTopic?.topicId
         );
 
-        if (prevIndex === -1) return prev;
-        prev[prevIndex] = result?.data;
-        return [...prev];
-      });
+        updatedTopicList[topicIndex] = {
+          ...result?.data,
+          isNew: true,
+        };
+
+        setTopicList(
+          [...updatedTopicList]?.filter((topic) => {
+            if (topic?.status === "ACTIVE" && isActive) return topic;
+
+            if (topic?.status === "INACTIVE" && !isActive) return topic;
+          })
+        );
+      } else {
+        setPagination((prev) => ({
+          ...prev,
+          current: 0,
+        }));
+
+        setTopicSearch((prev) => ({
+          ...prev,
+          page: 1,
+        }));
+
+        setHighLight(result?.data?.topicId);
+      }
+
+      // setTopicList((prev) => {
+      //   const prevIndex = prev?.findIndex(
+      //     (p) => p?.topicId === selectedTopic?.topicId
+      //   );
+
+      //   if (prevIndex === -1) return prev;
+      //   prev[prevIndex] = result?.data;
+      //   return [...prev];
+      // });
     } else {
-      setTopicList((prev) => [...prev, result?.data]);
+      // setTopicList((prev) => [...prev, result?.data]);
+      if (pagination?.current === 1) {
+        setTopicList((prev) => [{ ...result?.data, isNew: true }, ...prev]);
+      } else {
+        setPagination((prev) => ({
+          ...prev,
+          current: 0,
+        }));
+
+        setTopicSearch((prev) => ({
+          ...prev,
+          page: 1,
+        }));
+
+        setHighLight(result?.data?.topicId);
+      }
     }
 
     cancelModal();
@@ -137,7 +196,7 @@ const CreateTopicModal = ({
             },
           ]}
         >
-          <Select size={"middle"} options={studentList} disabled />
+          <Select size={"middle"} options={studentList} />
         </Form.Item>
         <Form.Item
           name="topicType"
@@ -150,13 +209,7 @@ const CreateTopicModal = ({
             },
           ]}
         >
-          <Select
-            size={"middle"}
-            options={[
-              { label: "PROJECT", value: "PROJECT" },
-              { label: "A", value: "A" },
-            ]}
-          />
+          <Select size={"middle"} options={topicType} />
         </Form.Item>
         <Form.Item
           name="startTime"

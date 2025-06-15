@@ -1,5 +1,5 @@
-import BaseApi from "./baseApi";
 import { USER } from "./apiConstant";
+import BaseApi from "./baseApi";
 
 class UserApi extends BaseApi {
   getMe() {
@@ -39,6 +39,10 @@ class UserApi extends BaseApi {
 
   getUserList(param) {
     return this.post(`${USER}/admin/page`, param);
+  }
+
+  resetPassword(param) {
+    return this.post(`${USER}/admin/reset-password/${param}`);
   }
 }
 export default UserApi;

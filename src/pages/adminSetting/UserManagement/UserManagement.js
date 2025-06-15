@@ -1,14 +1,11 @@
-import { LeftOutlined } from "@ant-design/icons";
 import { Button, Input, Popover, Select, Switch, Table } from "antd";
 import dayjs from "dayjs";
 import { debounce } from "lodash";
 import { useEffect, useRef, useState } from "react";
-import { FiEdit2, FiTrash } from "react-icons/fi";
 import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { useSideBarStore } from "../../../store/SideBarStore";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
 
@@ -27,24 +24,21 @@ const roleList = [
   },
 ];
 
+const pageSize = 14;
+
 const UserManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadMoreData, setIsLoadMoreData] = useState(true);
   const [isOpenUserModal, setIsOpenUserModal] = useState(false);
   const [isRemoveUserModal, setIsRemoveUserModal] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
-  const lastObserver = useRef();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
   const { user, languageMap } = useInfoUser();
-  const { switchIsWorkManagementOptions, isWorkManagementOptions } =
-    useSideBarStore((state) => state);
   const [userList, setUserList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [userHighLight, setUserHighLight] = useState(null);
+  const [highLight, setHighLight] = useState(null);
   const [userSearch, setUserSearch] = useState({
-    limit: 4,
+    limit: pageSize,
     page: 1,
     search: {
       textSearch: null,
@@ -56,7 +50,7 @@ const UserManagement = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     current: 1,
-    pageSize: 4,
+    pageSize: pageSize,
   });
 
   const tableRef = useRef(null);
@@ -136,13 +130,22 @@ const UserManagement = () => {
       const result = await apiFactory.userApi.getUserList(userSearch);
 
       if (result?.status === 200) {
+        if (highLight) {
+          const userIndex = result?.data?.items?.findIndex(
+            (u) => u?.userId === highLight
+          );
+
+          if (userIndex !== -1) {
+            result.data.items[userIndex].isNew = true;
+          }
+        }
+
         setUserList(
           result?.data?.items?.map((r) => ({
             ...r,
             birthday: r?.birthday
               ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
               : null,
-            isNew: r?.userId === userHighLight,
           }))
         );
 
@@ -230,7 +233,7 @@ const UserManagement = () => {
     setPagination((prev) => ({
       total: 0,
       current: 1,
-      pageSize: 4,
+      pageSize: pageSize,
     }));
 
     setUserSearch((prev) => ({
@@ -255,7 +258,7 @@ const UserManagement = () => {
     setPagination((prev) => ({
       total: 0,
       current: 1,
-      pageSize: 4,
+      pageSize: pageSize,
     }));
 
     setUserSearch({
@@ -269,35 +272,25 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUserList();
-  }, [userSearch?.search, userSearch?.page]);
+  }, [userSearch?.search, userSearch?.page, highLight]);
 
-  useEffect(() => {
-    if (!userHighLight) return;
+  // useEffect(() => {
+  //   if (!highLight) return;
 
-    const userIndex = userList?.findIndex(
-      (usr) => usr?.userId === userHighLight
-    );
+  //   const userIndex = userList?.findIndex(
+  //     (usr) => usr?.userId === highLight
+  //   );
 
-    if (userIndex === -1) return;
+  //   if (userIndex === -1) return;
 
-    userList[userIndex].isNew = true;
-    setUserList([...userList]);
-  }, [userHighLight]);
+  //   userList[userIndex].isNew = true;
+  //   setUserList([...userList]);
+  // }, [highLight]);
 
   return (
     <div>
-      <div
-        className={`flex flex-col w-full p-[10px] ${isMobile && "fixed top-[0] left-[0] bg-[white] shadow-sm z-[10]"}`}
-      >
+      <div className={`flex flex-col w-full p-[10px]`}>
         <div className="font-semibold text-[20px]   flex items-center">
-          {!isWorkManagementOptions && (
-            <a
-              className="btn-back-to-work-management mr-2"
-              onClick={switchIsWorkManagementOptions}
-            >
-              <LeftOutlined size={25} />
-            </a>
-          )}
           {languageMap?.["as.menu.user?.title"] ?? "User"}
         </div>
 
@@ -338,11 +331,9 @@ const UserManagement = () => {
             >
               <Switch
                 value={userSearch?.isActive}
-                style={{ zoom: isMobile && "0.7" }}
                 className="ml-2 w-[10px]"
                 onChange={(checked, e) => {
                   scrollToTopTable();
-                  setIsLoadMoreData(true);
                   setUserSearch({
                     ...userSearch,
                     limit: 30,
@@ -354,150 +345,33 @@ const UserManagement = () => {
               />
             </Popover>
           </div>
-          <Button
-            className="ml-2"
-            type="primary"
-            onClick={onAdd}
-            style={{ zoom: isMobile && "0.9" }}
-          >
+          <Button className="ml-2" type="primary" onClick={onAdd}>
             {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create User"}
           </Button>
         </div>
       </div>
       <div className="p-[10px]">
-        <div
-          className={`user-list ${isMobile ? "mt-[80px] p-0 border-none" : ""}`}
-        >
-          {isMobile ? (
-            <div
-              className={`flex flex-col gap-3 overflow-y-auto p-2 max-h-[78%]`}
-              ref={tableRef}
-            >
-              {userList?.map((user, index) => (
-                <div
-                  key={user?.userId}
-                  className={`flex items-start gap-4 p-4 rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition cursor-pointer relative ${getSelectedColor(user)}`}
-                  onDoubleClick={() => onDoubleClick(user)}
-                  // ref={index === userList?.length - 1 ? lastRecordRef : null}
-                >
-                  {/* <CustomAvatar
-                    className="w-14 h-14 rounded-full object-cover border"
-                    person={user}
-                  /> */}
-                  <div className="w-full">
-                    <div className="flex-1">
-                      {user?.name && (
-                        <div className="font-semibold text-[16px] text-gray-800 flex justify-between">
-                          <span>{user?.name}</span>
-                          <div>
-                            <span
-                              className={`px-[5px] text-sm rounded-full ${
-                                user?.isActive
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}
-                            >
-                              {user?.isActive ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {user?.email && (
-                        <div className="text-sm text-gray-500">
-                          {" "}
-                          {user?.email}
-                        </div>
-                      )}
-
-                      <div className="text-sm text-gray-600 mt-1 space-y-1">
-                        {user?.userCode && (
-                          <div>
-                            <strong>User code:</strong> {user?.userCode}
-                          </div>
-                        )}
-                        {user?.phone && (
-                          <div>
-                            <strong>Phone:</strong> {user?.phone}
-                          </div>
-                        )}
-                        {user?.birthday && (
-                          <div>
-                            <strong>Birthday:</strong> {user?.birthday}
-                          </div>
-                        )}
-                        {user?.roleCode && (
-                          <div>
-                            <strong>Role:</strong> {user?.roleCode}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      {user?.isActive && (
-                        <Button
-                          type="primary"
-                          danger
-                          icon={<FiTrash className="text-red-500" />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsRemoveUserModal(true);
-                            setRemovingUserId(user?.userId);
-                          }}
-                          className="flex-1"
-                        >
-                          Xóa
-                        </Button>
-                      )}
-                      <Button
-                        type="primary"
-                        icon={<FiEdit2 />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDoubleClick(user);
-                        }}
-                        className="flex-1"
-                      >
-                        Chỉnh sửa
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="" ref={tableRef}>
-              <Table
-                columns={columns}
-                dataSource={userList}
-                pagination={pagination}
-                onChange={handleTableChange}
-                loading={isLoading}
-                size={"middle"}
-                className="max-h-[1000px]"
-                rowClassName={rowClassName}
-                onRow={(record, index) => ({
-                  onDoubleClick: (e) => onDoubleClick(record),
-                  className: getSelectedColor(record),
-                  // ref:
-                  //   isLoadMoreData && index === userList?.length - 1
-                  //     ? lastRecordRef
-                  //     : null,
-                })}
-                scroll={
-                  isMobile
-                    ? {
-                        x: 700,
-                        y: 420,
-                      }
-                    : {
-                        x: 1000,
-                        y: 700,
-                      }
-                }
-              />
-            </div>
-          )}
+        <div className={`user-list`}>
+          <div className="" ref={tableRef}>
+            <Table
+              columns={columns}
+              dataSource={userList}
+              pagination={pagination}
+              onChange={handleTableChange}
+              loading={isLoading}
+              size={"middle"}
+              className="max-h-[1000px]"
+              rowClassName={rowClassName}
+              onRow={(record, index) => ({
+                onDoubleClick: (e) => onDoubleClick(record),
+                className: getSelectedColor(record),
+              })}
+              scroll={{
+                x: 1000,
+                y: 700,
+              }}
+            />
+          </div>
         </div>
       </div>
       {isRemoveUserModal && (
@@ -541,7 +415,7 @@ const UserManagement = () => {
           setPagination={setPagination}
           pagination={pagination}
           setUserSearch={setUserSearch}
-          setUserHighLight={setUserHighLight}
+          setHighLight={setHighLight}
         />
       )}
     </div>

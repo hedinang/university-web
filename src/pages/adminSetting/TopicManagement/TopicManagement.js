@@ -1,20 +1,20 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Input, Popover, Switch, Table } from "antd";
+import { Button, Input, Popover, Select, Switch, Table } from "antd";
 import { debounce } from "lodash";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { CreateTopicModal } from "../../../components/modal/adminSetting/CreateTopicModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { useSideBarStore } from "../../../store/SideBarStore";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
-// import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
+
+const pageSize = 4;
+const topicType = [
+  { label: "PROJECT", value: "PROJECT" },
+  { label: "A", value: "A" },
+];
 
 const TopiclManagement = () => {
-  const limit = 30;
-
-  // const { isVerify } = useAdminSettingContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadMoreData, setIsLoadMoreData] = useState(true);
   const [isOpenUserModal, setIsOpenUserModal] = useState(false);
@@ -22,18 +22,29 @@ const TopiclManagement = () => {
   const [removingUserId, setRemovingUserId] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
-  const lastObserver = useRef();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
   const { user, languageMap } = useInfoUser();
-  const { switchIsWorkManagementOptions, isWorkManagementOptions } =
-    useSideBarStore((state) => state);
   const [topicList, setTopicList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [highLight, setHighLight] = useState(null);
+  const [teacherList, setTeacherList] = useState([]);
+  const [studentList, setStudentList] = useState([]);
   const [topicSearch, setTopicSearch] = useState({
-    limit,
+    limit: pageSize,
     page: 1,
-    userName: null,
-    isActive: true,
+    search: {
+      title: null,
+      topicType: null,
+      studentId: null,
+      teacherId: null,
+      progress: null,
+      score: null,
+    },
+  });
+
+  const [pagination, setPagination] = useState({
+    total: 0,
+    current: 1,
+    pageSize: pageSize,
   });
 
   const tableRef = useRef(null);
@@ -102,23 +113,31 @@ const TopiclManagement = () => {
     if (isLoading) return;
 
     setIsLoading(true);
-    let data = [];
-
     try {
       const result = await apiFactory.topicApi.getTopicList(topicSearch);
 
       if (result?.status === 200) {
-        setTopicList(result?.data?.items);
+        if (highLight) {
+          const topicIndex = result?.data?.items?.findIndex(
+            (topic) => topic?.topicId === highLight
+          );
+
+          if (topicIndex !== -1) {
+            result.data.items[topicIndex].isNew = true;
+          }
+        }
+
+        setTopicList([...result?.data?.items]);
+
+        setPagination({
+          ...pagination,
+          total: result?.data?.totalItems,
+        });
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
     } finally {
       setIsLoading(false);
-
-      setTopicSearch((prev) => ({
-        ...prev,
-        skip: prev?.skip + data.length,
-      }));
     }
   };
 
@@ -170,52 +189,108 @@ const TopiclManagement = () => {
     }
   };
 
-  const debouncedSetUsernameSearch = debounce((e) => {
-    scrollToTopTable();
-    setIsLoadMoreData(true);
-    const userName = e?.target?.value?.trim() || null;
-
-    if (userName?.length > 0) {
-      setIsSearchMode(true);
-    } else setIsSearchMode(false);
+  const debouncedTextSearch = debounce((e) => {
+    const text = e?.target?.value?.trim() || null;
 
     setTopicSearch((prev) => ({
       ...prev,
-      limit: 30,
-      skip: 0,
-      userName,
+      page: 1,
+      search: {
+        ...prev?.search,
+        title: text,
+      },
     }));
   }, 500);
 
+  const onChangeLabel = (value, kind) => {
+    setPagination((prev) => ({
+      total: 0,
+      current: 1,
+      pageSize: pageSize,
+    }));
+
+    setTopicSearch({
+      ...topicSearch,
+      search: {
+        ...topicSearch?.search,
+        proposerId: kind === "STUDENT" ? value : topicSearch.search?.proposerId,
+        approverId: kind === "TEACHER" ? value : topicSearch.search?.approverId,
+        topicType:
+          kind === "TOPIC_TYPE" ? value : topicSearch.search?.topicType,
+      },
+    });
+  };
+
+  const fetchStudentList = async () => {
+    try {
+      setIsLoading(true);
+      const result = await apiFactory.userApi.listPerson({
+        role: "STUDENT",
+      });
+
+      if (result?.status === 200) {
+        setStudentList(
+          result?.data?.map((r) => ({
+            value: r?.userId,
+            label: r?.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTeacherList = async () => {
+    try {
+      setIsLoading(true);
+      const result = await apiFactory.userApi.listPerson({
+        role: "TEACHER",
+      });
+
+      if (result?.status === 200) {
+        setTeacherList(
+          result?.data?.map((r) => ({
+            value: r?.userId,
+            label: r?.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTableChange = (value) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: value.current,
+    }));
+
+    setTopicSearch({ ...topicSearch, page: value.current });
+  };
+
   useEffect(() => {
-    // if (isVerify) {
     fetchTopicList();
-    // }
-  }, [
-    topicSearch.userName,
-    // userSearch.isActive,
-    //  isVerify
-  ]);
+  }, [topicSearch?.search, topicSearch?.page, highLight]);
+
+  useEffect(() => {
+    fetchStudentList();
+    fetchTeacherList();
+  }, []);
 
   return (
     <div>
-      <div
-        className={`flex flex-col w-full p-[10px] ${isMobile && "fixed top-[0] left-[0] bg-[white] shadow-sm z-[10]"}`}
-      >
+      <div className={`flex flex-col w-full p-[10px]`}>
         <div className="font-semibold text-[20px]   flex items-center">
-          {!isWorkManagementOptions && (
-            <a
-              className="btn-back-to-work-management mr-2"
-              onClick={switchIsWorkManagementOptions}
-            >
-              <LeftOutlined size={25} />
-            </a>
-          )}
           {languageMap?.["as.menu.user?.title"] ?? "Topic"}
         </div>
-
         <div className="flex justify-between mb-[10px]">
-          <div className="flex justify-center items-center">
+          <div className="flex justify-center items-center gap-[10px]">
             <Popover
               content={
                 languageMap?.["as.menu.user?.placeHolderSearch"] ??
@@ -224,15 +299,43 @@ const TopiclManagement = () => {
               trigger="hover"
             >
               <Input
-                className="w-full mr-2"
+                className="w-full"
                 placeholder={
                   languageMap?.["as.menu.user?.placeHolderSearch"] ??
                   "Search user code, username, email"
                 }
-                onChange={(e) => debouncedSetUsernameSearch(e)}
+                onChange={(e) => debouncedTextSearch(e)}
                 allowClear
               />
             </Popover>
+            {user?.roleCode === "TEACHER" && (
+              <Select
+                placeholder="student"
+                onChange={(value) => onChangeLabel(value, "STUDENT")}
+                allowClear
+                value={topicSearch.search.proposerId}
+                className="w-[350px]"
+                options={studentList}
+              />
+            )}
+            {user?.roleCode === "STUDENT" && (
+              <Select
+                placeholder="teacher"
+                onChange={(value) => onChangeLabel(value, "TEACHER")}
+                allowClear
+                value={topicSearch.search.approverId}
+                className="w-[350px]"
+                options={teacherList}
+              />
+            )}
+            <Select
+              placeholder="topic type"
+              onChange={(value) => onChangeLabel(value, "TOPIC_TYPE")}
+              allowClear
+              value={topicSearch.search.topicType}
+              className="w-[350px]"
+              options={topicType}
+            />
             <Popover
               content={
                 topicSearch?.isActive
@@ -243,14 +346,13 @@ const TopiclManagement = () => {
             >
               <Switch
                 value={topicSearch?.isActive}
-                style={{ zoom: isMobile && "0.7" }}
                 className="ml-2 w-[10px]"
                 onChange={(checked, e) => {
                   scrollToTopTable();
                   setIsLoadMoreData(true);
                   setTopicSearch({
                     ...topicSearch,
-                    limit: 30,
+                    limit: pageSize,
                     skip: 0,
                     isActive: checked,
                   });
@@ -260,49 +362,32 @@ const TopiclManagement = () => {
             </Popover>
           </div>
           {user?.roleCode === "TEACHER" && (
-            <Button
-              className="ml-2"
-              type="primary"
-              onClick={onAdd}
-              style={{ zoom: isMobile && "0.9" }}
-            >
+            <Button className="ml-2" type="primary" onClick={onAdd}>
               {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Topic"}
             </Button>
           )}
         </div>
       </div>
       <div className="p-[10px]">
-        <div
-          className={`user-list ${isMobile ? "mt-[80px] p-0 border-none" : ""}`}
-        >
+        <div className={`user-list`}>
           <div className="" ref={tableRef}>
             <Table
               columns={columns}
               dataSource={topicList}
-              // pagination={false}
               loading={isLoading}
+              pagination={pagination}
+              onChange={handleTableChange}
               size={"middle"}
               className="max-h-[1000px]"
               rowClassName={rowClassName}
               onRow={(record, index) => ({
                 onDoubleClick: (e) => onDoubleClick(record),
                 className: getSelectedColor(record),
-                // ref:
-                //   isLoadMoreData && index === userList?.length - 1
-                //     ? lastRecordRef
-                //     : null,
               })}
-              scroll={
-                isMobile
-                  ? {
-                      x: 700,
-                      y: 420,
-                    }
-                  : {
-                      x: 1000,
-                      y: 700,
-                    }
-              }
+              scroll={{
+                x: 1000,
+                y: 700,
+              }}
             />
           </div>
         </div>
@@ -332,6 +417,10 @@ const TopiclManagement = () => {
           setIsOpenModalResetPW={setIsOpenModalResetPW}
           isActive={topicSearch?.isActive}
           setTopicList={setTopicList}
+          setPagination={setPagination}
+          pagination={pagination}
+          setTopicSearch={setTopicSearch}
+          setHighLight={setHighLight}
         />
       )}
     </div>

@@ -14,10 +14,13 @@ const CreateCouncilModal = ({
   cancelModal,
   title,
   selectedCouncil,
-  setUserList,
-  userList,
-  isActive,
   setCouncilList,
+  councilList,
+  isActive,
+  setPagination,
+  pagination,
+  setCouncilSearch,
+  setHighLight,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
@@ -87,17 +90,56 @@ const CreateCouncilModal = ({
     });
 
     if (selectedCouncil?.councilId) {
-      setCouncilList((prev) => {
-        const prevIndex = prev?.findIndex(
-          (p) => p?.councilId === selectedCouncil?.councilId
+      if (pagination?.current === 1) {
+        const updatedCouncilList = councilList?.map(
+          ({ isNew, ...rest }) => rest
         );
 
-        if (prevIndex === -1) return prev;
-        prev[prevIndex] = result?.data;
-        return [...prev];
-      });
+        const councilIndex = updatedCouncilList?.findIndex(
+          (council) => council?.councilId === selectedCouncil?.councilId
+        );
+
+        updatedCouncilList[councilIndex] = {
+          ...result?.data,
+          isNew: true,
+        };
+
+        setCouncilList(
+          [...updatedCouncilList]?.filter((user) => {
+            if (user?.status === "ACTIVE" && isActive) return user;
+
+            if (user?.status === "INACTIVE" && !isActive) return user;
+          })
+        );
+      } else {
+        setPagination((prev) => ({
+          ...prev,
+          current: 0,
+        }));
+
+        setCouncilSearch((prev) => ({
+          ...prev,
+          page: 1,
+        }));
+
+        setHighLight(result?.data?.councilId);
+      }
     } else {
-      setCouncilList((prev) => [...prev, result?.data]);
+      if (pagination?.current === 1) {
+        setCouncilList((prev) => [{ ...result?.data, isNew: true }, ...prev]);
+      } else {
+        setPagination((prev) => ({
+          ...prev,
+          current: 0,
+        }));
+
+        setCouncilSearch((prev) => ({
+          ...prev,
+          page: 1,
+        }));
+
+        setHighLight(result?.data?.councilId);
+      }
     }
 
     cancelModal();
@@ -209,10 +251,6 @@ const CreateCouncilModal = ({
   }, [memberList, retainTeacherList]);
 
   const fetchTeacherList = async () => {
-    console.log("222 ");
-    
-
-
     try {
       setIsLoading(true);
       const result = await apiFactory.userApi.listPerson({

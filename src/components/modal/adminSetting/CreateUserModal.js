@@ -19,7 +19,7 @@ const CreateUserModal = ({
   setPagination,
   pagination,
   setUserSearch,
-  setUserHighLight,
+  setHighLight,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
@@ -98,7 +98,7 @@ const CreateUserModal = ({
           page: 1,
         }));
 
-        setUserHighLight(result?.data?.userId);
+        setHighLight(result?.data?.userId);
       }
 
       cancelModal();
@@ -149,7 +149,7 @@ const CreateUserModal = ({
         page: 1,
       }));
 
-      setUserHighLight(result?.data?.userId);
+      setHighLight(result?.data?.userId);
     }
 
     cancelModal();
