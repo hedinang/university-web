@@ -1,126 +1,121 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Input, Popover, Select, Switch, Table } from "antd";
-import dayjs from "dayjs";
-import { debounce } from "lodash";
-import { useEffect, useRef, useState } from "react";
-import { FiEdit2, FiTrash } from "react-icons/fi";
-import { toast } from "react-toastify";
+import {
+  Button,
+  Col,
+  ConfigProvider,
+  Input,
+  Popover,
+  Row,
+  Switch,
+  Table,
+  Tag,
+} from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ImBin2 } from "react-icons/im";
+import { useNavigate } from "react-router-dom";
 import apiFactory from "../../../api";
-import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
-import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { useSideBarStore } from "../../../store/SideBarStore";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
+import { debounce } from "lodash";
+import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
+import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import { useAdminSettingContext } from "../../../context/AdminSettingContext";
+import { LeftOutlined } from "@ant-design/icons";
+import { useSideBarStore } from "../../../store/SideBarStore";
+import { FiEdit2, FiTrash } from "react-icons/fi";
+import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
+// import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
 
-const roleList = [
-  {
-    label: "TEACHER",
-    value: "TEACHER",
-  },
-  {
-    label: "STUDENT",
-    value: "STUDENT",
-  },
-  {
-    label: "ADMIN",
-    value: "ADMIN",
-  },
-];
+const SponsorshipManagement = () => {
+  const limit = 30;
 
-const UserManagement = () => {
+  // const { isVerify } = useAdminSettingContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadMoreData, setIsLoadMoreData] = useState(true);
   const [isOpenUserModal, setIsOpenUserModal] = useState(false);
   const [isRemoveUserModal, setIsRemoveUserModal] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedCouncil, setSelectedCouncil] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
   const lastObserver = useRef();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
   const { user, languageMap } = useInfoUser();
   const { switchIsWorkManagementOptions, isWorkManagementOptions } =
     useSideBarStore((state) => state);
-  const [userList, setUserList] = useState([]);
+  const [councilList, setCouncilList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [userHighLight, setUserHighLight] = useState(null);
-  const [userSearch, setUserSearch] = useState({
-    limit: 4,
+  const [topicSearch, setTopicSearch] = useState({
+    limit,
     page: 1,
-    search: {
-      textSearch: null,
-      role: null,
-      isActive: true,
-    },
-  });
-
-  const [pagination, setPagination] = useState({
-    total: 0,
-    current: 1,
-    pageSize: 4,
+    userName: null,
+    isActive: true,
   });
 
   const tableRef = useRef(null);
 
   const columns = [
+    // {
+    //   title: `${languageMap?.["as.menu.user.table.userCode"] ?? "Council Id"}`,
+    //   dataIndex: "councilId",
+    //   key: "councilId",
+    //   width: "150px",
+    // },
     {
-      title: `${languageMap?.["as.menu.user.table.userCode"] ?? "Username"}`,
-      dataIndex: "username",
-      key: "username",
-      width: "150px",
+      title: `${languageMap?.["as.menu.user.table.name"] ?? "Title"}`,
+      dataIndex: "title",
+      key: "title",
     },
     {
-      title: `${languageMap?.["as.menu.user.table.name"] ?? "Name"}`,
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Email"}`,
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.phone"] ?? "Phone"}`,
-      dataIndex: "phone",
-      key: "phone",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.birthday"] ?? "Birthday"}`,
-      dataIndex: "birthday",
-      key: "birthday",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.role"] ?? "Role"}`,
-      dataIndex: "roleCode",
-      key: "roleCode",
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Proposer"}`,
+      dataIndex: "proposerName",
+      key: "proposerName",
     },
     // {
-    //   title: `${languageMap?.["a"] ?? "Avatar"}`,
-    //   dataIndex: "avatar",
-    //   key: "avatar",
+    //   title: `${languageMap?.["as.menu.user.table.phone"] ?? "Host"}`,
+    //   dataIndex: "hostName",
+    //   key: "host",
     // },
-    // {
-    //   title: `${languageMap?.["as.menu.user.table.action"] ?? "Action"}`,
-    //   dataIndex: "action",
-    //   key: "action",
-    //   width: "100px",
-    //   render: (text, record) =>
-    //     record?.isActive ? (
-    //       <Button
-    //         className="bg-[#e00d0d] text-[white]"
-    //         onClick={() => {
-    //           setIsRemoveUserModal(true);
-    //           setRemovingUserId(record?.userId);
-    //         }}
-    //         icon={<FiTrash className="text-[18px]" />}
-    //       />
-    //     ) : null,
-    // },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Approver"}`,
+      dataIndex: "approverName",
+      key: "approverName",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Topic type"}`,
+      dataIndex: "topicType",
+      key: "topicType",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Start time"}`,
+      dataIndex: "startTime",
+      key: "startTime",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "End time"}`,
+      dataIndex: "endTime",
+      key: "endTime",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Progress"}`,
+      dataIndex: "progress",
+      key: "progress",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Score"}`,
+      dataIndex: "score",
+      key: "score",
+    },
   ];
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 860);
+  };
 
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
     setIsOpenUserModal(false);
-    setSelectedUser(null);
+    setSelectedCouncil(null);
   };
 
   const cancelRemoveModal = () => {
@@ -128,33 +123,84 @@ const UserManagement = () => {
     setRemovingUserId(null);
   };
 
-  const fetchUserList = async () => {
+  // const lastRecordRef = (node) => {
+  //   if (!isLoadMoreData || isLoading || isSearchMode) return;
+
+  //   if (lastObserver.current) lastObserver.current.disconnect();
+
+  //   lastObserver.current = new IntersectionObserver(async (entries) => {
+  //     if (entries[0].isIntersecting) {
+  //       setIsLoading(true);
+  //       try {
+  //         const result = await apiFactory.userApi.getUserList(userSearch);
+
+  //         if (result?.status === 200) {
+  //           setUserList([
+  //             ...userList,
+  //             ...result?.data?.map((r) => ({
+  //               ...r,
+  //               birthday: r?.birthday
+  //                 ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
+  //                 : null,
+  //             })),
+  //           ]);
+
+  //           setUserSearch({
+  //             ...userSearch,
+  //             skip: userSearch?.skip + result?.data?.length,
+  //           });
+
+  //           if (result?.data?.length < limit) {
+  //             setIsLoadMoreData(false);
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching project data:", error);
+  //       } finally {
+  //         setIsLoading(false);
+  //       }
+  //     }
+  //   });
+
+  //   if (node) lastObserver.current.observe(node);
+  // };
+
+  const fetchCouncilList = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
+    let data = [];
+
     try {
-      const result = await apiFactory.userApi.getUserList(userSearch);
+      const result = await apiFactory.topicApi.getTopicList(topicSearch);
 
       if (result?.status === 200) {
-        setUserList(
-          result?.data?.items?.map((r) => ({
-            ...r,
-            birthday: r?.birthday
-              ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-              : null,
-            isNew: r?.userId === userHighLight,
-          }))
-        );
+        // if (result?.data?.length < limit) {
+        //   setIsLoadMoreData(false);
+        // }
 
-        setPagination({
-          ...pagination,
-          total: result?.data?.totalItems,
-        });
+        // setUserList(
+        //   result?.data?.map((r) => ({
+        //     ...r,
+        //     birthday: r?.birthday
+        //       ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
+        //       : null,
+        //   }))
+        // );
+
+        // if (result?.data?.length > 0) data = result?.data;
+
+        setCouncilList(result?.data?.items);
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
     } finally {
       setIsLoading(false);
+
+      setTopicSearch((prev) => ({
+        ...prev,
+        skip: prev?.skip + data.length,
+      }));
     }
   };
 
@@ -176,12 +222,12 @@ const UserManagement = () => {
         return;
       }
 
-      const userIndex = userList?.findIndex(
+      const userIndex = councilList?.findIndex(
         (usr) => usr?.userId === removingUserId
       );
 
-      userList?.splice(userIndex, 1);
-      setUserList([...userList]);
+      councilList?.splice(userIndex, 1);
+      setCouncilList([...councilList]);
       toast.success(result?.message);
       cancelRemoveModal();
     } catch (error) {
@@ -190,13 +236,21 @@ const UserManagement = () => {
   };
 
   const onDoubleClick = (record) => {
-    setSelectedUser(record);
+    setSelectedCouncil(record);
     setIsOpenUserModal(true);
   };
 
   const getSelectedColor = (record) => {
-    if (record?.userId === selectedUser?.userId) return "bg-red";
+    if (record?.userId === selectedCouncil?.userId) return "bg-red";
   };
+
+  // useEffect(() => {
+  //   window.addEventListener("resize", handleResize);
+
+  //   return () => {
+  //     window.removeEventListener("resize", handleResize);
+  //   };
+  // }, []);
 
   const handleResetPassword = async () => {
     setIsOpenModalResetPW(false);
@@ -220,69 +274,32 @@ const UserManagement = () => {
     }
   };
 
-  const debouncedUsername = debounce((e) => {
+  const debouncedSetUsernameSearch = debounce((e) => {
+    scrollToTopTable();
+    setIsLoadMoreData(true);
     const userName = e?.target?.value?.trim() || null;
 
     if (userName?.length > 0) {
       setIsSearchMode(true);
     } else setIsSearchMode(false);
 
-    setPagination((prev) => ({
-      total: 0,
-      current: 1,
-      pageSize: 4,
-    }));
-
-    setUserSearch((prev) => ({
+    setTopicSearch((prev) => ({
       ...prev,
-      page: 1,
-      search: {
-        textSearch: userName,
-      },
+      limit: 30,
+      skip: 0,
+      userName,
     }));
   }, 500);
 
-  const handleTableChange = (value) => {
-    setPagination((prev) => ({
-      ...prev,
-      current: value.current,
-    }));
-
-    setUserSearch({ ...userSearch, page: value.current });
-  };
-
-  const onChangeLabel = (value) => {
-    setPagination((prev) => ({
-      total: 0,
-      current: 1,
-      pageSize: 4,
-    }));
-
-    setUserSearch({
-      ...userSearch,
-      search: {
-        ...userSearch.search,
-        role: value,
-      },
-    });
-  };
-
   useEffect(() => {
-    fetchUserList();
-  }, [userSearch?.search, userSearch?.page]);
-
-  useEffect(() => {
-    if (!userHighLight) return;
-
-    const userIndex = userList?.findIndex(
-      (usr) => usr?.userId === userHighLight
-    );
-
-    if (userIndex === -1) return;
-
-    userList[userIndex].isNew = true;
-    setUserList([...userList]);
-  }, [userHighLight]);
+    // if (isVerify) {
+    fetchCouncilList();
+    // }
+  }, [
+    topicSearch.userName,
+    // userSearch.isActive,
+    //  isVerify
+  ]);
 
   return (
     <div>
@@ -298,7 +315,7 @@ const UserManagement = () => {
               <LeftOutlined size={25} />
             </a>
           )}
-          {languageMap?.["as.menu.user?.title"] ?? "User"}
+          {languageMap?.["as.menu.user?.title"] ?? "Council"}
         </div>
 
         <div className="flex justify-between mb-[10px]">
@@ -316,35 +333,27 @@ const UserManagement = () => {
                   languageMap?.["as.menu.user?.placeHolderSearch"] ??
                   "Search user code, username, email"
                 }
-                onChange={(e) => debouncedUsername(e)}
+                onChange={(e) => debouncedSetUsernameSearch(e)}
                 allowClear
               />
             </Popover>
-            <Select
-              placeholder="user role"
-              onChange={onChangeLabel}
-              allowClear
-              value={userSearch.search.role}
-              className="w-[250px]"
-              options={roleList}
-            />
             <Popover
               content={
-                userSearch?.isActive
+                topicSearch?.isActive
                   ? languageMap?.["as.menu.user?.btnActive"] ?? "Active"
                   : languageMap?.["as.menu.user?.btnInactive"] ?? "Inactive"
               }
               trigger="hover"
             >
               <Switch
-                value={userSearch?.isActive}
+                value={topicSearch?.isActive}
                 style={{ zoom: isMobile && "0.7" }}
                 className="ml-2 w-[10px]"
                 onChange={(checked, e) => {
                   scrollToTopTable();
                   setIsLoadMoreData(true);
-                  setUserSearch({
-                    ...userSearch,
+                  setTopicSearch({
+                    ...topicSearch,
                     limit: 30,
                     skip: 0,
                     isActive: checked,
@@ -360,7 +369,7 @@ const UserManagement = () => {
             onClick={onAdd}
             style={{ zoom: isMobile && "0.9" }}
           >
-            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create User"}
+            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Topic"}
           </Button>
         </div>
       </div>
@@ -373,7 +382,7 @@ const UserManagement = () => {
               className={`flex flex-col gap-3 overflow-y-auto p-2 max-h-[78%]`}
               ref={tableRef}
             >
-              {userList?.map((user, index) => (
+              {councilList?.map((user, index) => (
                 <div
                   key={user?.userId}
                   className={`flex items-start gap-4 p-4 rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition cursor-pointer relative ${getSelectedColor(user)}`}
@@ -469,9 +478,8 @@ const UserManagement = () => {
             <div className="" ref={tableRef}>
               <Table
                 columns={columns}
-                dataSource={userList}
-                pagination={pagination}
-                onChange={handleTableChange}
+                dataSource={councilList}
+                // pagination={false}
                 loading={isLoading}
                 size={"middle"}
                 className="max-h-[1000px]"
@@ -525,27 +533,24 @@ const UserManagement = () => {
         />
       )}
       {isOpenUserModal && (
-        <CreateUserModal
+        <CreateCouncilModal
           isModalOpen={isOpenUserModal}
           cancelModal={cancelCreateModal}
           title={
-            selectedUser
-              ? languageMap?.["as.menu.user.update.title"] ?? "Update user"
-              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create User"
+            selectedCouncil
+              ? languageMap?.["as.menu.user.update.title"] ?? "Update Topic"
+              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create Topic"
           }
-          setUserList={setUserList}
-          userList={userList}
-          editingUser={selectedUser}
+          // setUserList={setUserList}
+          // userList={userList}
+          selectedCouncil={selectedCouncil}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
-          isActive={userSearch?.search?.isActive}
-          setPagination={setPagination}
-          pagination={pagination}
-          setUserSearch={setUserSearch}
-          setUserHighLight={setUserHighLight}
+          isActive={topicSearch?.isActive}
+          setCouncilList={setCouncilList}
         />
       )}
     </div>
   );
 };
 
-export { UserManagement };
+export { SponsorshipManagement };

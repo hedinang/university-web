@@ -1,36 +1,22 @@
-import { LeftOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import adminSettingLogo from "../../assets/admin-setting.png";
 import { CustomAvatar } from "../../components/avatar/CustomAvatar";
 import {
   KEY_MENU_ADMIN_SETTING,
   MENU_ADMIN_SETTING,
-  MENU_WORK_MANAGEMENT,
 } from "../../config/Constant";
 import { useSideBarStore } from "../../store/SideBarStore";
 import { useInfoUser } from "../../store/UserStore";
 import "./style.scss";
-import { Avatar, Divider } from "antd";
-import { getAvatar, getColor, getColorFromInitial } from "../../utils/Utils";
 
 const AdminSetting = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, languageMap } = useInfoUser();
   const [chosedMenuItem, setChosedMenuItem] = useState("USER");
-  const {
-    switchIsWorkManagementOptions,
-    isWorkManagementOptions,
-    isProfileDetail,
-    switchIsProfileDetail,
-  } = useSideBarStore((state) => state);
-  const [workManagementHeight, setWorkManagementHeight] = useState(
-    window.innerHeight
-  );
-  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-
-  const [isMobile, setIsMobile] = useState(false);
+  const { switchIsWorkManagementOptions, switchIsProfileDetail } =
+    useSideBarStore((state) => state);
+  const [workManagementHeight] = useState(window.innerHeight);
 
   const handleMenuItemClick = (menuItem) => {
     navigation(menuItem);
@@ -46,12 +32,30 @@ const AdminSetting = () => {
         return navigate("/admin-setting/council");
       case KEY_MENU_ADMIN_SETTING.USER:
         return navigate("/admin-setting/user");
+      case KEY_MENU_ADMIN_SETTING.TOPIC:
+        return navigate("/admin-setting/topic");
+      case KEY_MENU_ADMIN_SETTING.QUESTION:
+        return navigate("/admin-setting/question");
       default:
         return navigate("/admin-setting/user");
     }
   };
 
   const generateAminSettingMenu = (item) => {
+    if (item?.key === "USER" && user?.roleCode !== "ADMIN") return;
+    if (item?.key === "COUNCIL" && user?.roleCode !== "TEACHER") return;
+    if (item?.key === "SPONSORSHIP" && user?.roleCode !== "TEACHER") return;
+    if (
+      item?.key === "TOPIC" &&
+      !["TEACHER", "STUDENT"].includes(user?.roleCode)
+    )
+      return;
+    if (
+      item?.key === "QUESTION" &&
+      !["TEACHER", "STUDENT"].includes(user?.roleCode)
+    )
+      return;
+
     return (
       <div
         className={
@@ -76,89 +80,51 @@ const AdminSetting = () => {
     );
   };
 
-  const calculateWorkManagementHeight = () => {
-    setWorkManagementHeight(windowHeight);
-  };
+  // useEffect(() => {
+  //   const pathName = location?.pathname;
+  //   const start =
+  //     pathName?.indexOf("admin-setting/") + "admin-setting/"?.length;
+  //   const end =
+  //     pathName?.indexOf("/", start) !== -1
+  //       ? pathName?.indexOf("/", start)
+  //       : pathName?.length;
+  //   const result = pathName?.substring(start, end)?.toUpperCase();
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 930);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    handleResize();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowHeight(window.innerHeight);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const pathName = location?.pathname;
-    const start =
-      pathName?.indexOf("admin-setting/") + "admin-setting/"?.length;
-    const end =
-      pathName?.indexOf("/", start) !== -1
-        ? pathName?.indexOf("/", start)
-        : pathName?.length;
-    const result = pathName?.substring(start, end)?.toUpperCase();
-
-    setChosedMenuItem(result);
-  }, [location]);
-
-  useEffect(() => {
-    calculateWorkManagementHeight();
-  }, [windowHeight]);
+  //   setChosedMenuItem(result);
+  // }, [location]);
 
   return (
-    <>
-      {!isMobile ? (
-        <div className="desktop-work-management-menu">
-          <div className="flex overflow-hidden">
-            <div className="work-management-menu">
-              <div className="work-management-list">
-                <div
-                  className="work-management-container"
-                  style={{
-                    maxHeight: `${workManagementHeight}px`,
+    <div className="desktop-work-management-menu">
+      <div className="flex overflow-hidden">
+        <div className="work-management-menu">
+          <div className="work-management-list">
+            <div
+              className="work-management-container"
+              style={{
+                maxHeight: `${workManagementHeight}px`,
+              }}
+              id="work-management-container"
+            >
+              <div
+                className="flex justify-center p-[10px]"
+                onClick={() => {
+                  switchIsProfileDetail();
+                }}
+              >
+                <CustomAvatar
+                  person={{
+                    name: "NGUYEN VAN A",
+                    username: "NGUYEN VAN A",
+                    avatar:
+                      "https://ava-grp-talk.zadn.vn/9/9/b/3/6/360/8a42b70def9c6ec663113bbdd8dd66c2.jpg",
                   }}
-                  id="work-management-container"
-                >
-                  <div
-                    className="flex justify-center p-[10px]"
-                    onClick={() => {
-                      switchIsProfileDetail();
-                    }}
-                  >
-                    <CustomAvatar
-                      person={{
-                        name: "NGUYEN VAN A",
-                        username: "NGUYEN VAN A",
-                        avatar:
-                          "https://ava-grp-talk.zadn.vn/9/9/b/3/6/360/8a42b70def9c6ec663113bbdd8dd66c2.jpg",
-                      }}
-                    />
-                  </div>
-                  {MENU_ADMIN_SETTING.map((item) =>
-                    generateAminSettingMenu(item)
-                  )}
-                </div>
+                />
               </div>
+              {MENU_ADMIN_SETTING.map((item) => generateAminSettingMenu(item))}
             </div>
-            {/* {isProfileDetail && (
+          </div>
+        </div>
+        {/* {isProfileDetail && (
               <div
                 className="profile"
                 // ref={infoRef}
@@ -229,83 +195,11 @@ const AdminSetting = () => {
                 </button>
               </div>
             )} */}
-            <div className="work-content h-[100vh] overflow-y-auto bg-white">
-              <Outlet />
-            </div>
-          </div>
+        <div className="work-content h-[100vh] overflow-y-auto bg-white">
+          <Outlet />
         </div>
-      ) : (
-        <div className="mobile-work-management-menu">
-          <div className="flex overflow-hidden">
-            <div
-              className={`work-management-menu ${isWorkManagementOptions ? "block" : "hidden"}`}
-            >
-              <div className="work-management-list">
-                {location?.pathname?.includes("/admin-setting") ? (
-                  <div
-                    className="work-management-container"
-                    style={{
-                      maxHeight: `${workManagementHeight}px`,
-                    }}
-                    id="work-management-container"
-                  >
-                    <div className="flex justify-around items-center">
-                      <a
-                        className="btn-back-to-work-management"
-                        onClick={() => navigate("/conversation")}
-                      >
-                        <LeftOutlined size={25} />
-                      </a>
-                      <div className="w-[80%] flex justify-center items-center">
-                        <img
-                          src={adminSettingLogo}
-                          alt="logo"
-                          className="h-[77.22px]"
-                        />
-                      </div>
-                    </div>
-
-                    {MENU_ADMIN_SETTING.map((item) =>
-                      generateAminSettingMenu(item)
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="work-management-container"
-                    style={{
-                      maxHeight: `${workManagementHeight}px`,
-                    }}
-                  >
-                    <div className="flex justify-around items-center">
-                      <a
-                        className="btn-back-to-work-management"
-                        onClick={() => navigate("/conversation")}
-                      >
-                        <LeftOutlined size={25} />
-                      </a>
-                      <img
-                        src={adminSettingLogo}
-                        alt=""
-                        className="max-h-[80px]"
-                      />
-                      <span></span>
-                    </div>
-                    {MENU_WORK_MANAGEMENT.map((item) =>
-                      generateAminSettingMenu(item)
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div
-              className={`work-content h-[100vh] overflow-y-auto bg-white ${isWorkManagementOptions ? "hidden" : "block"}`}
-            >
-              <Outlet />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 export default AdminSetting;

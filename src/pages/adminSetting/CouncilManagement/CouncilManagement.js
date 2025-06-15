@@ -1,30 +1,15 @@
-import {
-  Button,
-  Col,
-  ConfigProvider,
-  Input,
-  Popover,
-  Row,
-  Switch,
-  Table,
-  Tag,
-} from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ImBin2 } from "react-icons/im";
-import { useNavigate } from "react-router-dom";
+import { LeftOutlined } from "@ant-design/icons";
+import { Button, Col, Input, Row, Select, Switch, Table, Tag } from "antd";
+import { debounce } from "lodash";
+import { useEffect, useRef, useState } from "react";
+import { FiEdit2, FiTrash } from "react-icons/fi";
+import { toast } from "react-toastify";
 import apiFactory from "../../../api";
+import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
+import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { useSideBarStore } from "../../../store/SideBarStore";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
-import { debounce } from "lodash";
-import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
-import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import { useAdminSettingContext } from "../../../context/AdminSettingContext";
-import { LeftOutlined } from "@ant-design/icons";
-import { useSideBarStore } from "../../../store/SideBarStore";
-import { FiEdit2, FiTrash } from "react-icons/fi";
-import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
 // import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
 
 const CouncilManagement = () => {
@@ -45,12 +30,23 @@ const CouncilManagement = () => {
     useSideBarStore((state) => state);
   const [councilList, setCouncilList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [userSearch, setUserSearch] = useState({
-    limit,
+  const [councilSearch, setCouncilSearch] = useState({
+    limit: 4,
     page: 1,
-    userName: null,
-    isActive: true,
+    search: {
+      councilName: null,
+      year: null,
+      memberId: null,
+    },
   });
+
+  const [pagination, setPagination] = useState({
+    total: 0,
+    current: 1,
+    pageSize: 4,
+  });
+
+  const [teacherList, setTeacherList] = useState([]);
 
   const tableRef = useRef(null);
 
@@ -148,48 +144,6 @@ const CouncilManagement = () => {
     setRemovingUserId(null);
   };
 
-  // const lastRecordRef = (node) => {
-  //   if (!isLoadMoreData || isLoading || isSearchMode) return;
-
-  //   if (lastObserver.current) lastObserver.current.disconnect();
-
-  //   lastObserver.current = new IntersectionObserver(async (entries) => {
-  //     if (entries[0].isIntersecting) {
-  //       setIsLoading(true);
-  //       try {
-  //         const result = await apiFactory.userApi.getUserList(userSearch);
-
-  //         if (result?.status === 200) {
-  //           setUserList([
-  //             ...userList,
-  //             ...result?.data?.map((r) => ({
-  //               ...r,
-  //               birthday: r?.birthday
-  //                 ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-  //                 : null,
-  //             })),
-  //           ]);
-
-  //           setUserSearch({
-  //             ...userSearch,
-  //             skip: userSearch?.skip + result?.data?.length,
-  //           });
-
-  //           if (result?.data?.length < limit) {
-  //             setIsLoadMoreData(false);
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching project data:", error);
-  //       } finally {
-  //         setIsLoading(false);
-  //       }
-  //     }
-  //   });
-
-  //   if (node) lastObserver.current.observe(node);
-  // };
-
   const fetchCouncilList = async () => {
     if (isLoading) return;
 
@@ -197,24 +151,9 @@ const CouncilManagement = () => {
     let data = [];
 
     try {
-      const result = await apiFactory.councilApi.getCouncilList(userSearch);
+      const result = await apiFactory.councilApi.getCouncilList(councilSearch);
 
       if (result?.status === 200) {
-        // if (result?.data?.length < limit) {
-        //   setIsLoadMoreData(false);
-        // }
-
-        // setUserList(
-        //   result?.data?.map((r) => ({
-        //     ...r,
-        //     birthday: r?.birthday
-        //       ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-        //       : null,
-        //   }))
-        // );
-
-        // if (result?.data?.length > 0) data = result?.data;
-
         setCouncilList(result?.data?.items);
       }
     } catch (error) {
@@ -222,10 +161,32 @@ const CouncilManagement = () => {
     } finally {
       setIsLoading(false);
 
-      setUserSearch((prev) => ({
+      setCouncilSearch((prev) => ({
         ...prev,
         skip: prev?.skip + data.length,
       }));
+    }
+  };
+
+  const fetchTeacherList = async () => {
+    try {
+      setIsLoading(true);
+      const result = await apiFactory.userApi.listPerson({
+        role: "TEACHER",
+      });
+
+      if (result?.status === 200) {
+        setTeacherList(
+          result?.data?.map((r) => ({
+            value: r?.userId,
+            label: r?.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -299,32 +260,51 @@ const CouncilManagement = () => {
     }
   };
 
-  const debouncedSetUsernameSearch = debounce((e) => {
-    scrollToTopTable();
-    setIsLoadMoreData(true);
-    const userName = e?.target?.value?.trim() || null;
+  const debouncedCounciName = debounce((e) => {
+    const councilName = e?.target?.value?.trim() || null;
 
-    if (userName?.length > 0) {
+    if (councilName?.length > 0) {
       setIsSearchMode(true);
     } else setIsSearchMode(false);
 
-    setUserSearch((prev) => ({
+    setPagination((prev) => ({
+      total: 0,
+      current: 1,
+      pageSize: 4,
+    }));
+
+    setCouncilSearch((prev) => ({
       ...prev,
-      limit: 30,
-      skip: 0,
-      userName,
+      page: 1,
+      search: {
+        councilName: councilName,
+      },
     }));
   }, 500);
 
+  const onChangeLabel = (value) => {
+    setPagination((prev) => ({
+      total: 0,
+      current: 1,
+      pageSize: 4,
+    }));
+
+    setCouncilSearch({
+      ...councilSearch,
+      search: {
+        ...councilSearch.search,
+        memberId: value,
+      },
+    });
+  };
+
   useEffect(() => {
-    // if (isVerify) {
     fetchCouncilList();
-    // }
-  }, [
-    userSearch.userName,
-    // userSearch.isActive,
-    //  isVerify
-  ]);
+  }, [councilSearch?.search, councilSearch?.page]);
+
+  useEffect(() => {
+    fetchTeacherList();
+  }, []);
 
   return (
     <div>
@@ -345,48 +325,39 @@ const CouncilManagement = () => {
 
         <div className="flex justify-between mb-[10px]">
           <div className="flex justify-center items-center">
-            <Popover
-              content={
+            <Input
+              className="w-full mr-2"
+              placeholder={
                 languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                "Search user code, username, email"
+                "Search council name"
               }
-              trigger="hover"
-            >
-              <Input
-                className="w-full mr-2"
-                placeholder={
-                  languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                  "Search user code, username, email"
-                }
-                onChange={(e) => debouncedSetUsernameSearch(e)}
-                allowClear
-              />
-            </Popover>
-            <Popover
-              content={
-                userSearch?.isActive
-                  ? languageMap?.["as.menu.user?.btnActive"] ?? "Active"
-                  : languageMap?.["as.menu.user?.btnInactive"] ?? "Inactive"
-              }
-              trigger="hover"
-            >
-              <Switch
-                value={userSearch?.isActive}
-                style={{ zoom: isMobile && "0.7" }}
-                className="ml-2 w-[10px]"
-                onChange={(checked, e) => {
-                  scrollToTopTable();
-                  setIsLoadMoreData(true);
-                  setUserSearch({
-                    ...userSearch,
-                    limit: 30,
-                    skip: 0,
-                    isActive: checked,
-                  });
-                }}
-                loading={isLoading}
-              />
-            </Popover>
+              onChange={(e) => debouncedCounciName(e)}
+              allowClear
+            />
+            <Select
+              placeholder="teacher"
+              onChange={onChangeLabel}
+              allowClear
+              value={councilSearch.search.memberId}
+              className="w-[350px]"
+              options={teacherList}
+            />
+            <Switch
+              value={councilSearch?.isActive}
+              style={{ zoom: isMobile && "0.7" }}
+              className="ml-2 w-[10px]"
+              onChange={(checked, e) => {
+                scrollToTopTable();
+                setIsLoadMoreData(true);
+                setCouncilSearch({
+                  ...councilSearch,
+                  limit: 30,
+                  skip: 0,
+                  isActive: checked,
+                });
+              }}
+              loading={isLoading}
+            />
           </div>
           <Button
             className="ml-2"
@@ -504,7 +475,7 @@ const CouncilManagement = () => {
               <Table
                 columns={columns}
                 dataSource={councilList}
-                // pagination={false}
+                pagination={pagination}
                 loading={isLoading}
                 size={"middle"}
                 className="max-h-[1000px]"
@@ -570,7 +541,7 @@ const CouncilManagement = () => {
           // userList={userList}
           selectedCouncil={selectedCouncil}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
-          isActive={userSearch?.isActive}
+          isActive={councilSearch?.isActive}
           setCouncilList={setCouncilList}
         />
       )}

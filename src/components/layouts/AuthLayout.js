@@ -1,12 +1,18 @@
 import { Layout, Space } from "antd";
-import React, { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Cookies from "js-cookie";
-import { verifiedAccessToken } from "../../utils/Utils";
-import "./style.scss";
+import { useEffect, useState } from "react";
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import { toast } from "react-toastify";
 import apiFactory from "../../api";
 import { useInfoUser } from "../../store/UserStore";
-import { toast } from "react-toastify";
+import { verifiedAccessToken } from "../../utils/Utils";
+import { SideBarMenu } from "../sideBar/SideBarMenu";
+import "./style.scss";
 
 const CHAT_WEB = process.env.REACT_APP_CHAT_WEB || "http://localhost:3000";
 
@@ -22,9 +28,19 @@ const AuthLayout = ({ children }) => {
 
     const me = await apiFactory.userApi.getMe();
     if (me?.status === 200) {
-      updateUser(me?.data?.user);
-      // updateLanguageMap(me?.data?.languageMap);
-      // await registerToken(me?.data?.user?.userId);
+      updateUser(me?.data);
+
+      if (location?.pathname === "/" && me?.data?.roleCode === "TEACHER") {
+        navigate("/topic");
+      }
+
+      if (location?.pathname === "/" && me?.data?.roleCode === "ADMIN") {
+        navigate("/user");
+      }
+
+      if (location?.pathname === "/" && me?.data?.roleCode === "STUDENT") {
+        navigate("/topic");
+      }
     } else {
       toast.error(me?.message);
       updateUser(null);
@@ -35,7 +51,7 @@ const AuthLayout = ({ children }) => {
   };
 
   const process = async () => {
-    const a = await verifiedAccessToken()
+    const a = await verifiedAccessToken();
 
     setVerified(a);
 
@@ -47,25 +63,6 @@ const AuthLayout = ({ children }) => {
       }
     } else {
       await getMe();
-      //stompConnect();
-      if (location?.pathname === "/") {
-        navigate("/admin-setting/user");
-      }
-      //  else {
-      //   if (redirectToken) {
-      //     let finalRedirectUrl = window.location.href.replace(
-      //       "?token=" + redirectToken,
-      //       ""
-      //     );
-
-      //     finalRedirectUrl = finalRedirectUrl.replace(
-      //       "&&token=" + redirectToken,
-      //       ""
-      //     );
-
-      //     window.location.href = finalRedirectUrl;
-      //   }
-      // }
     }
   };
 
@@ -77,7 +74,7 @@ const AuthLayout = ({ children }) => {
     <Space className="space-app" direction="vertical" size={[0, 48]}>
       {verified && (
         <Layout className="layout-app">
-          {/* <SideBar /> */}
+          <SideBarMenu />
           <Layout.Content>
             <Outlet />
           </Layout.Content>

@@ -1,13 +1,12 @@
 /* eslint-disable react/react-in-jsx-scope */
-import React from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import AuthLayout from "../components/layouts/AuthLayout";
+import { CouncilManagement } from "../pages/adminSetting/CouncilManagement/CouncilManagement";
+import { QuestionManagement } from "../pages/adminSetting/QuestionManagement/QuestionManagement";
+import { TopiclManagement } from "../pages/adminSetting/TopicManagement/TopicManagement";
+import { UserManagement } from "../pages/adminSetting/UserManagement/UserManagement";
 import Login from "../pages/login";
 import { Registration } from "../pages/registration/Registration";
-import AuthLayout from "../components/layouts/AuthLayout";
-import { AdminSettingProvider } from "../context/AdminSettingContext";
-import { UserManagement } from "../pages/adminSetting/UserManagement/UserManagement";
-import AdminSetting from "../pages/adminSetting/AdminSetting";
-import { CouncilManagement } from "../pages/adminSetting/CouncilManagement/CouncilManagement";
 
 const router = createBrowserRouter([
   {
@@ -20,46 +19,31 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/login" />,
+    element: <Navigate to="/" />,
   },
   {
     path: "/",
     element: <AuthLayout />,
     children: [
       {
-        path: "/admin-setting",
-        element: (
-          <AdminSettingProvider>
-            {/* <DirectoryProvider> */}
-              <AdminSetting />
-            {/* </DirectoryProvider> */}
-          </AdminSettingProvider>
-        ),
-        children: [
-          // {
-          //   element: <FileManagement />,
-          // },
-          // {
-          //   path: "schedule",
-          //   element: <FileManagement />,
-          // },
-          // {
-          //   path: "organization",
-          //   element: <OrgManagement />,
-          // },
-          {
-            path: "user",
-            element: <UserManagement />,
-          },
-          {
-            path: "council",
-            element: <CouncilManagement />,
-          },
-        ],
+        path: "user",
+        element: <UserManagement />,
       },
       {
-        path: "*",
-        element: <Navigate to="/conversation" />,
+        path: "council",
+        element: <CouncilManagement />,
+      },
+      {
+        path: "topic",
+        element: <TopiclManagement />,
+      },
+      {
+        path: "question",
+        element: <QuestionManagement />,
+      },
+      {
+        path: "sponsorship",
+        element: <QuestionManagement />,
       },
     ],
   },

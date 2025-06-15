@@ -2,6 +2,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Form, Input, Modal, Select, Spin } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa6";
+import { NumericFormat } from "react-number-format";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import apiFactory from "../../../api";
@@ -67,6 +68,11 @@ const CreateCouncilModal = ({
       memberList?.findIndex((member) => member?.councilRole === "HOST") === -1
     ) {
       toast.error("Have to have at least 1 teacher with role is host");
+      return;
+    }
+
+    if (values?.year < 2020 || values?.year > 2050) {
+      toast.error("Topic year has to be less than 2050 and greater than 2020");
       return;
     }
 
@@ -153,19 +159,24 @@ const CreateCouncilModal = ({
   };
 
   const generateMemberList = useCallback(() => {
+    const memberIds = memberList?.map((member) => member?.value);
+
+    const outOfTeacherList = retainTeacherList?.filter(
+      (teacher) => !memberIds.includes(teacher?.value)
+    )?.length;
+
     return (
-      <div className="flex flex-col gap-[10px]">
-        {retainTeacherList?.length > 0 && (
-          <div className="flex gap-[10px]">
-            <Button
-              // ref={tourStepRef3}
-              shape="circle"
-              className="bg-[#2a56b9]  text-[white]"
-              size="small"
-              onClick={addMember}
-              icon={<FaPlus className="text-[18px]" />}
-            />
-          </div>
+      <div className="flex flex-col gap-[10px] mt-[5px]">
+        {outOfTeacherList > 0 ? (
+          <Button
+            shape="circle"
+            className="bg-[#2a56b9]  text-[white]"
+            size="small"
+            onClick={addMember}
+            icon={<FaPlus className="text-[18px]" />}
+          />
+        ) : (
+          <div className="h-[24px]" />
         )}
         {memberList?.map((member) => {
           return (
@@ -197,7 +208,11 @@ const CreateCouncilModal = ({
     );
   }, [memberList, retainTeacherList]);
 
-  const fetchCouncilList = async () => {
+  const fetchTeacherList = async () => {
+    console.log("222 ");
+    
+
+
     try {
       setIsLoading(true);
       const result = await apiFactory.userApi.listPerson({
@@ -220,13 +235,11 @@ const CreateCouncilModal = ({
   };
 
   useEffect(() => {
-    fetchCouncilList();
+    fetchTeacherList();
   }, []);
 
   useEffect(() => {
     if (!selectedCouncil) return;
-
-    console.log(selectedCouncil);
 
     setMemberList(
       selectedCouncil?.memberList?.map((member) => ({
@@ -301,10 +314,8 @@ const CreateCouncilModal = ({
                 languageMap?.["as.menu.user.message.required"] ?? "Required!",
             },
           ]}
-          // normalize={(value) => (value ? value.toUpperCase() : "")}
         >
-          <Input maxLength={30} />
-          {/* <DatePicker picker="year" /> */}
+          <NumericFormat customInput={Input} />
         </Form.Item>
         <Form.Item
           name="memberList"

@@ -1,7 +1,7 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Form, Input, Modal, Select, Spin } from "antd";
 import dayjs from "dayjs";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { ROLE_TYPE } from "../../../config/Constant";
@@ -16,6 +16,10 @@ const CreateUserModal = ({
   setUserList,
   userList,
   isActive,
+  setPagination,
+  pagination,
+  setUserSearch,
+  setUserHighLight,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
@@ -44,43 +48,57 @@ const CreateUserModal = ({
         return;
       }
 
-      if (!isActive) {
-        const filteredUserList = userList?.filter(
-          (user) => user?.userId !== result?.data?.userId
-        );
-        setUserList([...filteredUserList]);
-        cancelModal();
-        return;
-      }
+      if (pagination?.current === 1) {
+        if (!isActive) {
+          const filteredUserList = userList?.filter(
+            (user) => user?.userId !== result?.data?.userId
+          );
+          setUserList([...filteredUserList]);
+          cancelModal();
+          return;
+        }
 
-      if (userList?.some((user) => user?.userId === result?.data?.userId)) {
-        const updatedUserList = userList?.map((user) => {
-          if (user?.userId === result?.data?.userId) {
-            return {
-              ...result?.data,
-              birthday: result?.data?.birthday
-                ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-                : null,
-              isNew: true,
-            };
-          }
+        if (userList?.some((user) => user?.userId === result?.data?.userId)) {
+          const updatedUserList = userList?.map((user) => {
+            if (user?.userId === result?.data?.userId) {
+              return {
+                ...result?.data,
+                birthday: result?.data?.birthday
+                  ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
+                  : null,
+                isNew: true,
+              };
+            }
 
-          return { ...user, isNew: false };
-        });
+            return { ...user, isNew: false };
+          });
 
-        setUserList([...updatedUserList]);
+          setUserList([...updatedUserList]);
+        } else {
+          const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
+
+          updatedUserList?.unshift({
+            ...result?.data,
+            birthday: result?.data?.birthday
+              ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
+              : null,
+            isNew: true,
+          });
+
+          setUserList([...updatedUserList]);
+        }
       } else {
-        const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
+        setPagination((prev) => ({
+          ...prev,
+          current: 0,
+        }));
 
-        updatedUserList?.unshift({
-          ...result?.data,
-          birthday: result?.data?.birthday
-            ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-            : null,
-          isNew: true,
-        });
+        setUserSearch((prev) => ({
+          ...prev,
+          page: 1,
+        }));
 
-        setUserList([...updatedUserList]);
+        setUserHighLight(result?.data?.userId);
       }
 
       cancelModal();
@@ -88,34 +106,52 @@ const CreateUserModal = ({
   };
 
   const onUpdate = async (request) => {
-    const result = await apiFactory.userApi.updateUser(request);
+    const result = await apiFactory.userApi.updateUser({
+      ...request,
+      userId: editingUser?.userId,
+    });
 
     if (result?.status !== 200) {
       toast.error(result?.message);
       return;
     }
 
-    const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
+    if (pagination?.current === 1) {
+      const updatedUserList = userList?.map(({ isNew, ...rest }) => rest);
 
-    const userIndex = updatedUserList?.findIndex(
-      (usr) => usr?.username === request?.username
-    );
+      const userIndex = updatedUserList?.findIndex(
+        (usr) => usr?.username === request?.username
+      );
 
-    updatedUserList[userIndex] = {
-      ...result?.data,
-      birthday: result?.data?.birthday
-        ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
-        : null,
-      isNew: true,
-    };
+      updatedUserList[userIndex] = {
+        ...result?.data,
+        birthday: result?.data?.birthday
+          ? dayjs(result?.data?.birthday)?.format("YYYY-MM-DD")
+          : null,
+        isNew: true,
+      };
 
-    setUserList(
-      [...updatedUserList]?.filter((user) => {
-        if(user?.status === "ACTIVE" && isActive) return user;
-        
-        if(user?.status === "INACTIVE" && !isActive) return user;
-      })
-    );
+      setUserList(
+        [...updatedUserList]?.filter((user) => {
+          if (user?.status === "ACTIVE" && isActive) return user;
+
+          if (user?.status === "INACTIVE" && !isActive) return user;
+        })
+      );
+    } else {
+      setPagination((prev) => ({
+        ...prev,
+        current: 0,
+      }));
+
+      setUserSearch((prev) => ({
+        ...prev,
+        page: 1,
+      }));
+
+      setUserHighLight(result?.data?.userId);
+    }
+
     cancelModal();
   };
 
@@ -242,26 +278,6 @@ const CreateUserModal = ({
         }}
         initialValues={user}
       >
-        {/* <Form.Item
-          name="userId"
-          label={languageMap?.["as.menu.user.update.userID"] ?? "User ID"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-            {
-              pattern: /^[A-Za-z0-9-]+$/,
-              message:
-                languageMap?.["as.menu.user.message.requiredUserId"] ??
-                "Only letters, numbers, and hyphens (-) are allowed!",
-            },
-          ]}
-          normalize={(value) => (value ? value.toUpperCase() : "")}
-        >
-          <Input maxLength={30} type="text" disabled={editingUser} />
-        </Form.Item> */}
         <Form.Item
           name="username"
           label={languageMap?.["as.menu.user.update.name"] ?? "Username"}
@@ -274,7 +290,7 @@ const CreateUserModal = ({
           ]}
           normalize={(value) => (value ? value.toUpperCase() : "")}
         >
-          <Input maxLength={30} type="text" />
+          <Input maxLength={30} type="text" disabled={editingUser} />
         </Form.Item>
         <Form.Item
           name="name"
@@ -309,19 +325,15 @@ const CreateUserModal = ({
         >
           <Input maxLength={30} type="text" />
         </Form.Item>
-        {/* <Form.Item
+        <Form.Item
           name="birthday"
           label={languageMap?.["as.menu.user.update.birthday"] ?? "Birthday"}
         >
           <DatePicker
-            // format={{
-            //   format: "YYYY-MM-DD",
-            //   type: "mask",
-            // }}
-            format="YYYY-MM-DD"
+            format="DD-MM-YYYY"
             placeholder={languageMap?.["as.selectDate"] ?? "Select date"}
           />
-        </Form.Item> */}
+        </Form.Item>
         <Form.Item
           name="roleCode"
           label={languageMap?.["as.menu.user.update.role"] ?? "Role"}

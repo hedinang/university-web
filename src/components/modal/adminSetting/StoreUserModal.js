@@ -1,9 +1,8 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Avatar, Button, Checkbox, Col, Input, Modal, Row, Spin } from "antd";
 import { debounce } from "lodash";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDirectoryContext } from "../../../pages/adminSetting/OrgManagement/directory/DirectoryContext";
-// import { ItemInfo } from "../../../pages/adminSetting/OrgManagement/directory/ItemInfo";
 import dayjs from "dayjs";
 import { IoSearchOutline } from "react-icons/io5";
 import { toast } from "react-toastify";
@@ -11,7 +10,6 @@ import apiFactory from "../../../api";
 import { useInfoUser } from "../../../store/UserStore";
 import { getAvatar, getColor, getColorFromInitial } from "../../../utils/Utils";
 import "./style.scss";
-import { CustomAvatar } from "../../avatar/CustomAvatar";
 
 const ItemInfo = ({ user, isHost, isAdmin, onAddUser }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 860);

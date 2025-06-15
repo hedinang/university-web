@@ -1,8 +1,8 @@
 import { Avatar, Modal } from "antd";
-import "./style.scss";
+import { useState } from "react";
 import { useInfoUser } from "../../store/UserStore";
-import React, { useState } from "react";
 import { getAvatar, getColor, getColorFromInitial } from "../../utils/Utils";
+import "./style.scss";
 
 const ProfileModal = ({ isModalOpen, closeModal }) => {
   const { user, languageMap } = useInfoUser();
@@ -40,16 +40,12 @@ const ProfileModal = ({ isModalOpen, closeModal }) => {
             </Avatar>
           </div>
         </div>
-
         <div className="mt-3 font-semibold">ID:</div>
-
         <div className="mt-3">{user?.userId} </div>
         <div className="mt-3  font-semibold">
           {languageMap ? languageMap["menu.profile.name"] : "Name"}:
         </div>
-
         <div className="mt-3">{user?.name} </div>
-
         <div className="mt-3  font-semibold">Tel:</div>
         <div className="mt-3 ">{user?.phone} </div>
       </div>

@@ -10,7 +10,7 @@ const CustomAvatar = ({ person }) => {
         ),
         color: getColor(person?.name?.[0] || person?.username?.[0]),
       }}
-      size={60}
+      size={50}
       src={person?.avatar ? person?.avatar : null}
     >
       {person?.name?.[0] || person?.username?.[0]}

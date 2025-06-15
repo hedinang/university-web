@@ -1,126 +1,161 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Input, Popover, Select, Switch, Table } from "antd";
-import dayjs from "dayjs";
-import { debounce } from "lodash";
-import { useEffect, useRef, useState } from "react";
-import { FiEdit2, FiTrash } from "react-icons/fi";
-import { toast } from "react-toastify";
+import {
+  Button,
+  Col,
+  ConfigProvider,
+  Input,
+  Popover,
+  Row,
+  Switch,
+  Table,
+  Tag,
+} from "antd";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { ImBin2 } from "react-icons/im";
+import { useNavigate } from "react-router-dom";
 import apiFactory from "../../../api";
-import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
-import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { useSideBarStore } from "../../../store/SideBarStore";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
+import { debounce } from "lodash";
+import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
+import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import { useAdminSettingContext } from "../../../context/AdminSettingContext";
+import { LeftOutlined } from "@ant-design/icons";
+import { useSideBarStore } from "../../../store/SideBarStore";
+import { FiEdit2, FiTrash } from "react-icons/fi";
+import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
+import SideBarQuestion from "../../../components/sideBar/SideBarQuestion";
+// import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
+import TextArea from "antd/es/input/TextArea";
+import { CreateQuestionModal } from "../../../components/modal/adminSetting/CreateQuestionModal";
 
-const roleList = [
-  {
-    label: "TEACHER",
-    value: "TEACHER",
-  },
-  {
-    label: "STUDENT",
-    value: "STUDENT",
-  },
-  {
-    label: "ADMIN",
-    value: "ADMIN",
-  },
-];
+export const TitleInput = memo(({ item, onBlurName }) => {
+  const [value, setValue] = useState(item?.title || "");
 
-const UserManagement = () => {
+  useEffect(() => {
+    setValue(item?.title || "");
+  }, [item]);
+
+  const handleChange = (e) => {
+    setValue(e?.target?.value);
+  };
+
+  const handleBlur = () => {
+    onBlurName?.(item, value);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleBlur();
+  };
+
+  const handlePreventAllEvents = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  return (
+    <TextArea
+      className="task-name w-full"
+      maxLength={100}
+      value={value}
+      onChange={handleChange}
+      onDoubleClick={handlePreventAllEvents}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      autoSize={{ minRows: 1, maxRows: 5 }}
+    />
+  );
+});
+
+const QuestionManagement = () => {
+  const limit = 30;
+
+  // const { isVerify } = useAdminSettingContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadMoreData, setIsLoadMoreData] = useState(true);
-  const [isOpenUserModal, setIsOpenUserModal] = useState(false);
+  const [isOpenQuestionModal, setIsOpenQuestionModal] = useState(false);
+  const [isOpenTimelineDetail, setIsOpenTimelineDetail] = useState(false);
   const [isRemoveUserModal, setIsRemoveUserModal] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
   const lastObserver = useRef();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
   const { user, languageMap } = useInfoUser();
   const { switchIsWorkManagementOptions, isWorkManagementOptions } =
     useSideBarStore((state) => state);
-  const [userList, setUserList] = useState([]);
+  const [questionList, setQuestionList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [userHighLight, setUserHighLight] = useState(null);
-  const [userSearch, setUserSearch] = useState({
+
+  const [questionSearch, setQuestionSearch] = useState({
     limit: 4,
     page: 1,
     search: {
-      textSearch: null,
-      role: null,
-      isActive: true,
+      title: null,
+      content: null,
+      questionerName: null,
+      recipientName: null,
     },
-  });
-
-  const [pagination, setPagination] = useState({
-    total: 0,
-    current: 1,
-    pageSize: 4,
   });
 
   const tableRef = useRef(null);
 
   const columns = [
-    {
-      title: `${languageMap?.["as.menu.user.table.userCode"] ?? "Username"}`,
-      dataIndex: "username",
-      key: "username",
-      width: "150px",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.name"] ?? "Name"}`,
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Email"}`,
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.phone"] ?? "Phone"}`,
-      dataIndex: "phone",
-      key: "phone",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.birthday"] ?? "Birthday"}`,
-      dataIndex: "birthday",
-      key: "birthday",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.role"] ?? "Role"}`,
-      dataIndex: "roleCode",
-      key: "roleCode",
-    },
     // {
-    //   title: `${languageMap?.["a"] ?? "Avatar"}`,
-    //   dataIndex: "avatar",
-    //   key: "avatar",
+    //   title: `${languageMap?.["as.menu.user.table.userCode"] ?? "Council Id"}`,
+    //   dataIndex: "councilId",
+    //   key: "councilId",
+    //   width: "150px",
     // },
-    // {
-    //   title: `${languageMap?.["as.menu.user.table.action"] ?? "Action"}`,
-    //   dataIndex: "action",
-    //   key: "action",
-    //   width: "100px",
-    //   render: (text, record) =>
-    //     record?.isActive ? (
-    //       <Button
-    //         className="bg-[#e00d0d] text-[white]"
-    //         onClick={() => {
-    //           setIsRemoveUserModal(true);
-    //           setRemovingUserId(record?.userId);
-    //         }}
-    //         icon={<FiTrash className="text-[18px]" />}
-    //       />
-    //     ) : null,
-    // },
+
+    {
+      title: `${languageMap?.["as.menu.user.table.name"] ?? "Questioner name"}`,
+      dataIndex: "title",
+      key: "title",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.name"] ?? "Recipient name"}`,
+      dataIndex: "questionerName",
+      key: "questionerName",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.name"] ?? "Title"}`,
+      dataIndex: "title",
+      key: "title",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Question date"}`,
+      dataIndex: "questionDate",
+      key: "questionDate",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Last comment date"}`,
+      dataIndex: "lastCommentDate",
+      key: "lastCommentDate",
+    },
+    {
+      title: `${languageMap?.["as.menu.user.table.email"] ?? "Unread"}`,
+      dataIndex: "unread",
+      key: "unread",
+      render: (unread, record) => {
+        return (
+          <div className="bg-[red] w-[30px] h-[30px] rounded-[50%] text-white flex justify-center items-center">
+            {unread < 99 ? unread : `${unread}+`}
+          </div>
+        );
+      },
+    },
   ];
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 860);
+  };
 
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
-    setIsOpenUserModal(false);
-    setSelectedUser(null);
+    setIsOpenQuestionModal(false);
+    // setSelectedCouncil(null);
   };
 
   const cancelRemoveModal = () => {
@@ -128,38 +163,75 @@ const UserManagement = () => {
     setRemovingUserId(null);
   };
 
-  const fetchUserList = async () => {
+  // const lastRecordRef = (node) => {
+  //   if (!isLoadMoreData || isLoading || isSearchMode) return;
+
+  //   if (lastObserver.current) lastObserver.current.disconnect();
+
+  //   lastObserver.current = new IntersectionObserver(async (entries) => {
+  //     if (entries[0].isIntersecting) {
+  //       setIsLoading(true);
+  //       try {
+  //         const result = await apiFactory.userApi.getUserList(userSearch);
+
+  //         if (result?.status === 200) {
+  //           setUserList([
+  //             ...userList,
+  //             ...result?.data?.map((r) => ({
+  //               ...r,
+  //               birthday: r?.birthday
+  //                 ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
+  //                 : null,
+  //             })),
+  //           ]);
+
+  //           setUserSearch({
+  //             ...userSearch,
+  //             skip: userSearch?.skip + result?.data?.length,
+  //           });
+
+  //           if (result?.data?.length < limit) {
+  //             setIsLoadMoreData(false);
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching project data:", error);
+  //       } finally {
+  //         setIsLoading(false);
+  //       }
+  //     }
+  //   });
+
+  //   if (node) lastObserver.current.observe(node);
+  // };
+
+  const fetchQuestionList = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
+    let data = [];
+
     try {
-      const result = await apiFactory.userApi.getUserList(userSearch);
+      const result =
+        await apiFactory.questionApi.getQuestionList(questionSearch);
 
       if (result?.status === 200) {
-        setUserList(
-          result?.data?.items?.map((r) => ({
-            ...r,
-            birthday: r?.birthday
-              ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-              : null,
-            isNew: r?.userId === userHighLight,
-          }))
-        );
-
-        setPagination({
-          ...pagination,
-          total: result?.data?.totalItems,
-        });
+        setQuestionList(result?.data?.items);
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
     } finally {
       setIsLoading(false);
+
+      setQuestionSearch((prev) => ({
+        ...prev,
+        skip: prev?.skip + data.length,
+      }));
     }
   };
 
   const onAdd = () => {
-    setIsOpenUserModal(true);
+    setIsOpenQuestionModal(true);
   };
 
   const rowClassName = (record) => {
@@ -176,12 +248,12 @@ const UserManagement = () => {
         return;
       }
 
-      const userIndex = userList?.findIndex(
+      const userIndex = questionList?.findIndex(
         (usr) => usr?.userId === removingUserId
       );
 
-      userList?.splice(userIndex, 1);
-      setUserList([...userList]);
+      questionList?.splice(userIndex, 1);
+      setQuestionList([...questionList]);
       toast.success(result?.message);
       cancelRemoveModal();
     } catch (error) {
@@ -190,13 +262,21 @@ const UserManagement = () => {
   };
 
   const onDoubleClick = (record) => {
-    setSelectedUser(record);
-    setIsOpenUserModal(true);
+    setSelectedQuestion(record);
+    setIsOpenTimelineDetail(true);
   };
 
   const getSelectedColor = (record) => {
-    if (record?.userId === selectedUser?.userId) return "bg-red";
+    if (record?.userId === selectedQuestion?.userId) return "bg-red";
   };
+
+  // useEffect(() => {
+  //   window.addEventListener("resize", handleResize);
+
+  //   return () => {
+  //     window.removeEventListener("resize", handleResize);
+  //   };
+  // }, []);
 
   const handleResetPassword = async () => {
     setIsOpenModalResetPW(false);
@@ -220,69 +300,32 @@ const UserManagement = () => {
     }
   };
 
-  const debouncedUsername = debounce((e) => {
+  const debouncedSetUsernameSearch = debounce((e) => {
+    scrollToTopTable();
+    setIsLoadMoreData(true);
     const userName = e?.target?.value?.trim() || null;
 
     if (userName?.length > 0) {
       setIsSearchMode(true);
     } else setIsSearchMode(false);
 
-    setPagination((prev) => ({
-      total: 0,
-      current: 1,
-      pageSize: 4,
-    }));
-
-    setUserSearch((prev) => ({
+    setQuestionSearch((prev) => ({
       ...prev,
-      page: 1,
-      search: {
-        textSearch: userName,
-      },
+      limit: 30,
+      skip: 0,
+      userName,
     }));
   }, 500);
 
-  const handleTableChange = (value) => {
-    setPagination((prev) => ({
-      ...prev,
-      current: value.current,
-    }));
-
-    setUserSearch({ ...userSearch, page: value.current });
-  };
-
-  const onChangeLabel = (value) => {
-    setPagination((prev) => ({
-      total: 0,
-      current: 1,
-      pageSize: 4,
-    }));
-
-    setUserSearch({
-      ...userSearch,
-      search: {
-        ...userSearch.search,
-        role: value,
-      },
-    });
-  };
-
   useEffect(() => {
-    fetchUserList();
-  }, [userSearch?.search, userSearch?.page]);
-
-  useEffect(() => {
-    if (!userHighLight) return;
-
-    const userIndex = userList?.findIndex(
-      (usr) => usr?.userId === userHighLight
-    );
-
-    if (userIndex === -1) return;
-
-    userList[userIndex].isNew = true;
-    setUserList([...userList]);
-  }, [userHighLight]);
+    // if (isVerify) {
+    fetchQuestionList();
+    // }
+  }, [
+    questionSearch.userName,
+    // userSearch.isActive,
+    //  isVerify
+  ]);
 
   return (
     <div>
@@ -298,7 +341,7 @@ const UserManagement = () => {
               <LeftOutlined size={25} />
             </a>
           )}
-          {languageMap?.["as.menu.user?.title"] ?? "User"}
+          {languageMap?.["as.menu.user?.title"] ?? "Question"}
         </div>
 
         <div className="flex justify-between mb-[10px]">
@@ -316,35 +359,27 @@ const UserManagement = () => {
                   languageMap?.["as.menu.user?.placeHolderSearch"] ??
                   "Search user code, username, email"
                 }
-                onChange={(e) => debouncedUsername(e)}
+                onChange={(e) => debouncedSetUsernameSearch(e)}
                 allowClear
               />
             </Popover>
-            <Select
-              placeholder="user role"
-              onChange={onChangeLabel}
-              allowClear
-              value={userSearch.search.role}
-              className="w-[250px]"
-              options={roleList}
-            />
             <Popover
               content={
-                userSearch?.isActive
+                questionSearch?.isActive
                   ? languageMap?.["as.menu.user?.btnActive"] ?? "Active"
                   : languageMap?.["as.menu.user?.btnInactive"] ?? "Inactive"
               }
               trigger="hover"
             >
               <Switch
-                value={userSearch?.isActive}
+                value={questionSearch?.isActive}
                 style={{ zoom: isMobile && "0.7" }}
                 className="ml-2 w-[10px]"
                 onChange={(checked, e) => {
                   scrollToTopTable();
                   setIsLoadMoreData(true);
-                  setUserSearch({
-                    ...userSearch,
+                  setQuestionSearch({
+                    ...questionSearch,
                     limit: 30,
                     skip: 0,
                     isActive: checked,
@@ -360,7 +395,7 @@ const UserManagement = () => {
             onClick={onAdd}
             style={{ zoom: isMobile && "0.9" }}
           >
-            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create User"}
+            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create question"}
           </Button>
         </div>
       </div>
@@ -373,7 +408,7 @@ const UserManagement = () => {
               className={`flex flex-col gap-3 overflow-y-auto p-2 max-h-[78%]`}
               ref={tableRef}
             >
-              {userList?.map((user, index) => (
+              {questionList?.map((user, index) => (
                 <div
                   key={user?.userId}
                   className={`flex items-start gap-4 p-4 rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition cursor-pointer relative ${getSelectedColor(user)}`}
@@ -469,9 +504,8 @@ const UserManagement = () => {
             <div className="" ref={tableRef}>
               <Table
                 columns={columns}
-                dataSource={userList}
-                pagination={pagination}
-                onChange={handleTableChange}
+                dataSource={questionList}
+                // pagination={false}
                 loading={isLoading}
                 size={"middle"}
                 className="max-h-[1000px]"
@@ -500,6 +534,36 @@ const UserManagement = () => {
           )}
         </div>
       </div>
+      {isOpenTimelineDetail && (
+        <SideBarQuestion
+          // onClose={() => {
+          //   setIsOpenTimelineDetail(false);
+          //   setSelectedTask(null);
+          // }}
+          isOpen={isOpenTimelineDetail}
+          selectedQuestion={selectedQuestion}
+          onClose={() => {
+            setIsOpenTimelineDetail(false);
+            setSelectedQuestion(null);
+          }}
+          // data={selectedTask}
+          // allDataTimeline={data}
+          // unwindTaskList={unwindTaskList}
+          // setUnwindTaskList={setUnwindTaskList}
+          // projectProgressList={projectProgressList}
+          // changeDate={changeDate}
+          // onBlurTask={onBlurTask}
+          // changeProgressRate={changeProgressRate}
+          // onBlurProgressRate={onBlurProgressRate}
+          // onBlurStatus={onBlurStatus}
+          // handleAddMember={handleAddMember}
+          // deleteTask={deleteTask}
+          // permissionCurrentUser={permissionCurrentUser}
+          // generateParticipant={generateParticipant}
+          // currentProjectDetail={projectDetail}
+        />
+      )}
+
       {isRemoveUserModal && (
         <GeneralModal
           title={
@@ -524,28 +588,25 @@ const UserManagement = () => {
           onConfirm={handleResetPassword}
         />
       )}
-      {isOpenUserModal && (
-        <CreateUserModal
-          isModalOpen={isOpenUserModal}
+      {isOpenQuestionModal && (
+        <CreateQuestionModal
+          isModalOpen={isOpenQuestionModal}
           cancelModal={cancelCreateModal}
           title={
-            selectedUser
-              ? languageMap?.["as.menu.user.update.title"] ?? "Update user"
-              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create User"
+            selectedQuestion
+              ? languageMap?.["as.menu.user.update.title"] ?? "Update question"
+              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create question"
           }
-          setUserList={setUserList}
-          userList={userList}
-          editingUser={selectedUser}
+          // setUserList={setUserList}
+          // userList={userList}
+          selectedCouncil={selectedQuestion}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
-          isActive={userSearch?.search?.isActive}
-          setPagination={setPagination}
-          pagination={pagination}
-          setUserSearch={setUserSearch}
-          setUserHighLight={setUserHighLight}
+          isActive={questionSearch?.isActive}
+          setQuestionList={setQuestionList}
         />
       )}
     </div>
   );
 };
 
-export { UserManagement };
+export { QuestionManagement };
