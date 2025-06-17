@@ -7,7 +7,7 @@ class UserApi extends BaseApi {
   }
 
   logout() {
-    return this.get(`${USER}/logout`);
+    return this.post(`${USER}/logout`);
   }
 
   checkExistedUser(param) {
