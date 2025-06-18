@@ -38,6 +38,7 @@ const TopiclManagement = () => {
       teacherId: null,
       progress: null,
       score: null,
+      status: "ACTIVE",
     },
   });
 
@@ -415,7 +416,8 @@ const TopiclManagement = () => {
           }
           selectedTopic={selectedTopic}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
-          isActive={topicSearch?.isActive}
+          topicSearch={topicSearch}
+          topicList={topicList}
           setTopicList={setTopicList}
           setPagination={setPagination}
           pagination={pagination}

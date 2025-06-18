@@ -16,7 +16,7 @@ const CreateCouncilModal = ({
   selectedCouncil,
   setCouncilList,
   councilList,
-  isActive,
+  councilSearch,
   setPagination,
   pagination,
   setCouncilSearch,
@@ -91,25 +91,19 @@ const CreateCouncilModal = ({
 
     if (selectedCouncil?.councilId) {
       if (pagination?.current === 1) {
-        const updatedCouncilList = councilList?.map(
-          ({ isNew, ...rest }) => rest
-        );
-
-        const councilIndex = updatedCouncilList?.findIndex(
+        const councilIndex = councilList?.findIndex(
           (council) => council?.councilId === selectedCouncil?.councilId
         );
 
-        updatedCouncilList[councilIndex] = {
+        councilList[councilIndex] = {
           ...result?.data,
           isNew: true,
         };
 
         setCouncilList(
-          [...updatedCouncilList]?.filter((user) => {
-            if (user?.status === "ACTIVE" && isActive) return user;
-
-            if (user?.status === "INACTIVE" && !isActive) return user;
-          })
+          [...councilList]?.filter(
+            (item) => item?.status === councilSearch?.search?.status
+          )
         );
       } else {
         setPagination((prev) => ({
@@ -377,12 +371,12 @@ const CreateCouncilModal = ({
             size={"middle"}
             options={[
               {
-                value: true,
+                value: "ACTIVE",
                 label:
                   languageMap?.["as.menu.user.update.activeSelect"] ?? "Active",
               },
               {
-                value: false,
+                value: "INACTIVE",
                 label:
                   languageMap?.["as.menu.user.update.inactiveSelect"] ??
                   "Inactive",

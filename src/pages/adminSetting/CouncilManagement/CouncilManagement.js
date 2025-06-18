@@ -62,6 +62,7 @@ const CouncilManagement = () => {
       councilName: null,
       year: null,
       memberId: null,
+      status: "ACTIVE",
     },
   });
 
@@ -365,10 +366,10 @@ const CouncilManagement = () => {
           setIsOpenModalResetPW={setIsOpenModalResetPW}
           setCouncilList={setCouncilList}
           councilList={councilList}
-          isActive={councilSearch?.search?.isActive}
           setPagination={setPagination}
           pagination={pagination}
           setCouncilSearch={setCouncilSearch}
+          councilSearch={councilSearch}
           setHighLight={setHighLight}
         />
       )}

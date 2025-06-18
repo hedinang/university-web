@@ -18,7 +18,7 @@ const CreateTopicModal = ({
   selectedTopic,
   topicList,
   setTopicList,
-  isActive,
+  topicSearch,
   setPagination,
   pagination,
   setTopicSearch,
@@ -58,23 +58,19 @@ const CreateTopicModal = ({
 
     if (selectedTopic?.topicId) {
       if (pagination?.current === 1) {
-        const updatedTopicList = topicList?.map(({ isNew, ...rest }) => rest);
-
-        const topicIndex = updatedTopicList?.findIndex(
+        const topicIndex = topicList?.findIndex(
           (topic) => topic?.topicId === selectedTopic?.topicId
         );
 
-        updatedTopicList[topicIndex] = {
+        topicList[topicIndex] = {
           ...result?.data,
           isNew: true,
         };
 
         setTopicList(
-          [...updatedTopicList]?.filter((topic) => {
-            if (topic?.status === "ACTIVE" && isActive) return topic;
-
-            if (topic?.status === "INACTIVE" && !isActive) return topic;
-          })
+          [...topicList]?.filter(
+            (item) => item?.status === topicSearch?.search?.status
+          )
         );
       } else {
         setPagination((prev) => ({
@@ -89,18 +85,7 @@ const CreateTopicModal = ({
 
         setHighLight(result?.data?.topicId);
       }
-
-      // setTopicList((prev) => {
-      //   const prevIndex = prev?.findIndex(
-      //     (p) => p?.topicId === selectedTopic?.topicId
-      //   );
-
-      //   if (prevIndex === -1) return prev;
-      //   prev[prevIndex] = result?.data;
-      //   return [...prev];
-      // });
     } else {
-      // setTopicList((prev) => [...prev, result?.data]);
       if (pagination?.current === 1) {
         setTopicList((prev) => [{ ...result?.data, isNew: true }, ...prev]);
       } else {
@@ -283,8 +268,8 @@ const CreateTopicModal = ({
           <Select
             size={"middle"}
             options={[
-              { label: "ACCEPTED", value: "ACCEPTED" },
-              { label: "CANCEL", value: "CANCEL" },
+              { label: "Active", value: "ACTIVE" },
+              { label: "Inactive", value: "INACTIVE" },
             ]}
           />
         </Form.Item>
