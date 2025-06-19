@@ -4,11 +4,29 @@ import { useEffect, useState } from "react";
 import { FaPen } from "react-icons/fa6";
 import { IoMdRefresh } from "react-icons/io";
 import { IoCloseSharp } from "react-icons/io5";
+import { MdDelete } from "react-icons/md";
 import apiFactory from "../../api";
 import { useInfoUser } from "../../store/UserStore";
 import { CommentModal } from "../modal/CommentModal";
 
-const CommentDetail = ({ comment }) => {
+const CommentDetail = ({ comment, commentList, setCommentList }) => {
+  const { user, languageMap } = useInfoUser();
+  const deleteComment = async () => {
+    const result = await apiFactory.commentApi.storeComment({
+      commentId: comment?.commentId,
+      status: "INACTIVE",
+    });
+
+    if (result?.status !== 200) return;
+
+    const cmIndex = commentList?.findIndex(
+      (cm) => cm?.commentId === comment?.commentId
+    );
+    commentList?.splice(cmIndex, 1);
+
+    setCommentList([...commentList]);
+  };
+
   return (
     <div className="w-[100%]">
       <div className="task-activity-header justify-between flex">
@@ -25,6 +43,14 @@ const CommentDetail = ({ comment }) => {
           <span className="member-name">{comment?.commentatorName}</span>
           <span className="text-[12px]">{comment?.date}</span>
         </div>
+        {user?.userId === comment?.userId && (
+          <Button
+            type="primary"
+            className="bg-[red]"
+            icon={<MdDelete />}
+            onClick={deleteComment}
+          />
+        )}
       </div>
       <div className="task-activity-content flex justify-between">
         <div className="ms-10 comment-content max-w-[80%] flex-1">
@@ -108,124 +134,68 @@ const SideBarQuestion = ({ isOpen, selectedQuestion, onClose }) => {
         </div>
         <div className="p-[10px] flex flex-col gap-[10px]">
           <Row className="flex items-center">
-            <Col span={8}>
+            <Col span={4}>
               <label>
                 {languageMap?.["modal.sideBarTimeLine.taskName"] ?? "Title:"}
               </label>
             </Col>
-            <Col span={16}>
-              {/* <TitleInput item={selectedQuestion} onBlurName={onBlurTitle} /> */}
+            <Col span={20}>
               <TextArea
                 className="task-name w-full"
                 maxLength={100}
                 value={selectedQuestion?.title}
-                // onChange={handleChange}
-                // onDoubleClick={handlePreventAllEvents}
-                // onBlur={handleBlur}
-                // onKeyDown={handleKeyDown}
                 autoSize={{ minRows: 1, maxRows: 5 }}
-              />
-            </Col>
-          </Row>
-          <Row className="flex items-center">
-            <Col span={8}>
-              <label>
-                {languageMap?.["modal.sideBarTimeLine.taskName"] ??
-                  "Questioner name:"}
-              </label>
-            </Col>
-            <Col span={16}>
-              <TextArea
-                className="task-name w-full"
-                maxLength={100}
-                value={selectedQuestion?.questionerName}
-                // onChange={handleChange}
-                // onDoubleClick={handlePreventAllEvents}
-                // onBlur={handleBlur}
-                // onKeyDown={handleKeyDown}
                 disabled
-                autoSize={{ minRows: 1, maxRows: 5 }}
               />
             </Col>
           </Row>
           <Row className="flex items-center">
-            <Col span={8}>
-              <label>
-                {languageMap?.["modal.sideBarTimeLine.taskName"] ??
-                  "Recipient name:"}
-              </label>
-            </Col>
-            <Col span={16}>
-              <TextArea
-                className="task-name w-full"
-                maxLength={100}
-                value={selectedQuestion?.recipientName}
-                // onChange={handleChange}
-                // onDoubleClick={handlePreventAllEvents}
-                // onBlur={handleBlur}
-                // onKeyDown={handleKeyDown}
-                disabled
-                autoSize={{ minRows: 1, maxRows: 5 }}
-              />
-            </Col>
-          </Row>
-          <Row className="flex items-center">
-            <Col span={8}>
-              <label>
-                {languageMap?.["modal.sideBarTimeLine.workStatus"] ??
-                  "Question date:"}
-              </label>
-            </Col>
-            <Col span={16}>
-              <TextArea
-                className="task-name w-full"
-                maxLength={100}
-                value={selectedQuestion?.questionDate}
-                // onChange={handleChange}
-                // onDoubleClick={handlePreventAllEvents}
-                // onBlur={handleBlur}
-                // onKeyDown={handleKeyDown}
-                disabled
-                autoSize={{ minRows: 1, maxRows: 5 }}
-              />
-            </Col>
-          </Row>
-          <Row className="flex items-center">
-            <Col span={8}>
+            <Col span={4}>
               <label>
                 {languageMap?.["modal.sideBarTimeLine.workStatus"] ??
                   "Content:"}
               </label>
             </Col>
-            <Col span={16}>
+            <Col span={20}>
               <TextArea
                 className="task-name w-full"
                 maxLength={100}
                 value={selectedQuestion?.content}
-                // onChange={handleChange}
-                // onDoubleClick={handlePreventAllEvents}
-                // onBlur={handleBlur}
-                // onKeyDown={handleKeyDown}
                 disabled
-                autoSize={{ minRows: 1, maxRows: 5 }}
+                autoSize={{ minRows: 4, maxRows: 5 }}
               />
             </Col>
           </Row>
           <hr className="my-3" />
           {commentList.map((comment) => (
-            <CommentDetail comment={comment} key={comment?.commentId}/>
+            <CommentDetail
+              comment={comment}
+              key={comment?.commentId}
+              commentList={commentList}
+              setCommentList={setCommentList}
+            />
           ))}
-          <div className="absolute bottom-[12px] right-[10px] flex gap-[10px]">
+          <div className="absolute bottom-[12px] right-[10px] flex justify-between w-[96%]">
             <Button
               type="primary"
-              icon={<FaPen />}
+              className="bg-[red]"
+              icon={<MdDelete />}
               onClick={() => setIsComment(true)}
             >
-              Comment
+              Delete question
             </Button>
-            <Button type="primary" icon={<IoMdRefresh />}>
-              Refresh
-            </Button>
+            <div className="flex gap-[10px]">
+              <Button
+                type="primary"
+                icon={<FaPen />}
+                onClick={() => setIsComment(true)}
+              >
+                Comment
+              </Button>
+              <Button type="primary" icon={<IoMdRefresh />}>
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -233,6 +203,8 @@ const SideBarQuestion = ({ isOpen, selectedQuestion, onClose }) => {
         <CommentModal
           isModalOpen={isComment}
           closeModal={() => setIsComment(false)}
+          question={selectedQuestion}
+          setCommentList={setCommentList}
         />
       )}
     </>

@@ -181,7 +181,7 @@ const TopiclManagement = () => {
   };
 
   const getSelectedColor = (record) => {
-    if (record?.userId === selectedTopic?.userId) return "bg-red";
+    if (record?.topicId === selectedTopic?.topicId) return "highlighted-row-clicked";
   };
 
   const scrollToTopTable = () => {
@@ -380,7 +380,7 @@ const TopiclManagement = () => {
               onChange={handleTableChange}
               size={"middle"}
               className="max-h-[1000px]"
-              rowClassName={rowClassName}
+              // rowClassName={rowClassName}
               onRow={(record, index) => ({
                 onDoubleClick: (e) => onDoubleClick(record),
                 className: getSelectedColor(record),
