@@ -1,121 +1,84 @@
-import {
-  Button,
-  Col,
-  ConfigProvider,
-  Input,
-  Popover,
-  Row,
-  Switch,
-  Table,
-  Tag,
-} from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ImBin2 } from "react-icons/im";
-import { useNavigate } from "react-router-dom";
+import { Button, Col, Input, Row, Select, Switch, Table, Tag } from "antd";
+import { debounce } from "lodash";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import apiFactory from "../../../api";
+import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
+import { GeneralModal } from "../../../components/modal/GeneralModal";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
-import { debounce } from "lodash";
-import { CreateUserModal } from "../../../components/modal/adminSetting/CreateUserModal";
-import { GeneralModal } from "../../../components/modal/GeneralModal";
-import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import { useAdminSettingContext } from "../../../context/AdminSettingContext";
-import { LeftOutlined } from "@ant-design/icons";
-import { useSideBarStore } from "../../../store/SideBarStore";
-import { FiEdit2, FiTrash } from "react-icons/fi";
-import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
-// import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
+
+const columns = [
+  {
+    title: "Topic Name",
+    dataIndex: "topicName",
+    key: "topicName",
+  },
+  {
+    title: "Council Name",
+    dataIndex: "councilName",
+    key: "councilName",
+  },
+  {
+    title: "Budget",
+    dataIndex: "budget",
+    key: "budget",
+    width: "300px",
+    render: (members, record) => {
+      return (
+        <Row>
+          {members?.map((m) => (
+            <Col span={8}>
+              <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
+                {m?.name}
+              </Tag>
+            </Col>
+          ))}
+        </Row>
+      );
+    },
+  },
+];
+const pageSize = 4;
 
 const SponsorshipManagement = () => {
-  const limit = 30;
-
-  // const { isVerify } = useAdminSettingContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadMoreData, setIsLoadMoreData] = useState(true);
   const [isOpenUserModal, setIsOpenUserModal] = useState(false);
   const [isRemoveUserModal, setIsRemoveUserModal] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
-  const [selectedCouncil, setSelectedCouncil] = useState(null);
+  const [selectedSponsorship, setSelectedSponsorship] = useState(null);
   const [isOpenModalResetPW, setIsOpenModalResetPW] = useState(null);
-  const lastObserver = useRef();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 860);
   const { user, languageMap } = useInfoUser();
-  const { switchIsWorkManagementOptions, isWorkManagementOptions } =
-    useSideBarStore((state) => state);
-  const [councilList, setCouncilList] = useState([]);
+
+  const [sponsorshipList, setSponsorshipList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [topicSearch, setTopicSearch] = useState({
-    limit,
+  const [highLight, setHighLight] = useState(null);
+  const [sponsorshipSearch, setSponsorshipSearch] = useState({
+    limit: pageSize,
     page: 1,
-    userName: null,
-    isActive: true,
+    search: {
+      councilName: null,
+      year: null,
+      memberId: null,
+      status: "ACTIVE",
+    },
   });
 
+  const [pagination, setPagination] = useState({
+    total: 0,
+    current: 1,
+    pageSize: pageSize,
+  });
+
+  const [teacherList, setTeacherList] = useState([]);
+
   const tableRef = useRef(null);
-
-  const columns = [
-    // {
-    //   title: `${languageMap?.["as.menu.user.table.userCode"] ?? "Council Id"}`,
-    //   dataIndex: "councilId",
-    //   key: "councilId",
-    //   width: "150px",
-    // },
-    {
-      title: `${languageMap?.["as.menu.user.table.name"] ?? "Title"}`,
-      dataIndex: "title",
-      key: "title",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Proposer"}`,
-      dataIndex: "proposerName",
-      key: "proposerName",
-    },
-    // {
-    //   title: `${languageMap?.["as.menu.user.table.phone"] ?? "Host"}`,
-    //   dataIndex: "hostName",
-    //   key: "host",
-    // },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Approver"}`,
-      dataIndex: "approverName",
-      key: "approverName",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Topic type"}`,
-      dataIndex: "topicType",
-      key: "topicType",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Start time"}`,
-      dataIndex: "startTime",
-      key: "startTime",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "End time"}`,
-      dataIndex: "endTime",
-      key: "endTime",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Progress"}`,
-      dataIndex: "progress",
-      key: "progress",
-    },
-    {
-      title: `${languageMap?.["as.menu.user.table.email"] ?? "Score"}`,
-      dataIndex: "score",
-      key: "score",
-    },
-  ];
-
-  const handleResize = () => {
-    setIsMobile(window.innerWidth < 860);
-  };
 
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
     setIsOpenUserModal(false);
-    setSelectedCouncil(null);
+    setSelectedSponsorship(null);
   };
 
   const cancelRemoveModal = () => {
@@ -123,84 +86,57 @@ const SponsorshipManagement = () => {
     setRemovingUserId(null);
   };
 
-  // const lastRecordRef = (node) => {
-  //   if (!isLoadMoreData || isLoading || isSearchMode) return;
-
-  //   if (lastObserver.current) lastObserver.current.disconnect();
-
-  //   lastObserver.current = new IntersectionObserver(async (entries) => {
-  //     if (entries[0].isIntersecting) {
-  //       setIsLoading(true);
-  //       try {
-  //         const result = await apiFactory.userApi.getUserList(userSearch);
-
-  //         if (result?.status === 200) {
-  //           setUserList([
-  //             ...userList,
-  //             ...result?.data?.map((r) => ({
-  //               ...r,
-  //               birthday: r?.birthday
-  //                 ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-  //                 : null,
-  //             })),
-  //           ]);
-
-  //           setUserSearch({
-  //             ...userSearch,
-  //             skip: userSearch?.skip + result?.data?.length,
-  //           });
-
-  //           if (result?.data?.length < limit) {
-  //             setIsLoadMoreData(false);
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching project data:", error);
-  //       } finally {
-  //         setIsLoading(false);
-  //       }
-  //     }
-  //   });
-
-  //   if (node) lastObserver.current.observe(node);
-  // };
-
-  const fetchCouncilList = async () => {
+  const fetchSponsorshipList = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
-    let data = [];
-
     try {
-      const result = await apiFactory.topicApi.getTopicList(topicSearch);
+      const result = await apiFactory.sponsorshipApi.getSponsorshipList(sponsorshipSearch);
 
       if (result?.status === 200) {
-        // if (result?.data?.length < limit) {
-        //   setIsLoadMoreData(false);
-        // }
+        if (highLight) {
+          const councilIndex = result?.data?.items?.findIndex(
+            (council) => council?.councilId === highLight
+          );
 
-        // setUserList(
-        //   result?.data?.map((r) => ({
-        //     ...r,
-        //     birthday: r?.birthday
-        //       ? dayjs(r?.birthday)?.format("YYYY-MM-DD")
-        //       : null,
-        //   }))
-        // );
+          if (councilIndex !== -1) {
+            result.data.items[councilIndex].isNew = true;
+          }
+        }
 
-        // if (result?.data?.length > 0) data = result?.data;
+        setSponsorshipList([...result?.data?.items]);
 
-        setCouncilList(result?.data?.items);
+        setPagination({
+          ...pagination,
+          total: result?.data?.totalItems,
+        });
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
 
-      setTopicSearch((prev) => ({
-        ...prev,
-        skip: prev?.skip + data.length,
-      }));
+  const fetchTeacherList = async () => {
+    try {
+      setIsLoading(true);
+      const result = await apiFactory.userApi.listPerson({
+        role: "TEACHER",
+      });
+
+      if (result?.status === 200) {
+        setTeacherList(
+          result?.data?.map((r) => ({
+            value: r?.userId,
+            label: r?.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,12 +158,12 @@ const SponsorshipManagement = () => {
         return;
       }
 
-      const userIndex = councilList?.findIndex(
+      const userIndex = sponsorshipList?.findIndex(
         (usr) => usr?.userId === removingUserId
       );
 
-      councilList?.splice(userIndex, 1);
-      setCouncilList([...councilList]);
+      sponsorshipList?.splice(userIndex, 1);
+      setSponsorshipList([...sponsorshipList]);
       toast.success(result?.message);
       cancelRemoveModal();
     } catch (error) {
@@ -236,21 +172,13 @@ const SponsorshipManagement = () => {
   };
 
   const onDoubleClick = (record) => {
-    setSelectedCouncil(record);
+    setSelectedSponsorship(record);
     setIsOpenUserModal(true);
   };
 
   const getSelectedColor = (record) => {
-    if (record?.userId === selectedCouncil?.userId) return "bg-red";
+    if (record?.userId === selectedSponsorship?.userId) return "bg-red";
   };
-
-  // useEffect(() => {
-  //   window.addEventListener("resize", handleResize);
-
-  //   return () => {
-  //     window.removeEventListener("resize", handleResize);
-  //   };
-  // }, []);
 
   const handleResetPassword = async () => {
     setIsOpenModalResetPW(false);
@@ -274,238 +202,130 @@ const SponsorshipManagement = () => {
     }
   };
 
-  const debouncedSetUsernameSearch = debounce((e) => {
-    scrollToTopTable();
-    setIsLoadMoreData(true);
-    const userName = e?.target?.value?.trim() || null;
+  const debouncedCounciName = debounce((e) => {
+    const councilName = e?.target?.value?.trim() || null;
 
-    if (userName?.length > 0) {
+    if (councilName?.length > 0) {
       setIsSearchMode(true);
     } else setIsSearchMode(false);
 
-    setTopicSearch((prev) => ({
+    setPagination((prev) => ({
+      total: 0,
+      current: 1,
+      pageSize: pageSize,
+    }));
+
+    setSponsorshipSearch((prev) => ({
       ...prev,
-      limit: 30,
-      skip: 0,
-      userName,
+      page: 1,
+      search: {
+        councilName: councilName,
+      },
     }));
   }, 500);
 
+  const handleTableChange = (value) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: value.current,
+    }));
+
+    setSponsorshipSearch({ ...sponsorshipSearch, page: value.current });
+  };
+
+  const onChangeLabel = (value) => {
+    setPagination((prev) => ({
+      total: 0,
+      current: 1,
+      pageSize: pageSize,
+    }));
+
+    setSponsorshipSearch({
+      ...sponsorshipSearch,
+      search: {
+        ...sponsorshipSearch.search,
+        memberId: value,
+      },
+    });
+  };
+
   useEffect(() => {
-    // if (isVerify) {
-    fetchCouncilList();
-    // }
-  }, [
-    topicSearch.userName,
-    // userSearch.isActive,
-    //  isVerify
-  ]);
+    fetchSponsorshipList();
+  }, [sponsorshipSearch?.search, sponsorshipSearch?.page, highLight]);
+
+  useEffect(() => {
+    fetchTeacherList();
+  }, []);
 
   return (
     <div>
-      <div
-        className={`flex flex-col w-full p-[10px] ${isMobile && "fixed top-[0] left-[0] bg-[white] shadow-sm z-[10]"}`}
-      >
+      <div className={`flex flex-col w-full p-[10px]`}>
         <div className="font-semibold text-[20px]   flex items-center">
-          {!isWorkManagementOptions && (
-            <a
-              className="btn-back-to-work-management mr-2"
-              onClick={switchIsWorkManagementOptions}
-            >
-              <LeftOutlined size={25} />
-            </a>
-          )}
           {languageMap?.["as.menu.user?.title"] ?? "Council"}
         </div>
 
         <div className="flex justify-between mb-[10px]">
           <div className="flex justify-center items-center">
-            <Popover
-              content={
+            <Input
+              className="w-full mr-2"
+              placeholder={
                 languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                "Search user code, username, email"
+                "Search council name"
               }
-              trigger="hover"
-            >
-              <Input
-                className="w-full mr-2"
-                placeholder={
-                  languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                  "Search user code, username, email"
-                }
-                onChange={(e) => debouncedSetUsernameSearch(e)}
-                allowClear
-              />
-            </Popover>
-            <Popover
-              content={
-                topicSearch?.isActive
-                  ? languageMap?.["as.menu.user?.btnActive"] ?? "Active"
-                  : languageMap?.["as.menu.user?.btnInactive"] ?? "Inactive"
-              }
-              trigger="hover"
-            >
-              <Switch
-                value={topicSearch?.isActive}
-                style={{ zoom: isMobile && "0.7" }}
-                className="ml-2 w-[10px]"
-                onChange={(checked, e) => {
-                  scrollToTopTable();
-                  setIsLoadMoreData(true);
-                  setTopicSearch({
-                    ...topicSearch,
-                    limit: 30,
-                    skip: 0,
-                    isActive: checked,
-                  });
-                }}
-                loading={isLoading}
-              />
-            </Popover>
+              onChange={(e) => debouncedCounciName(e)}
+              allowClear
+            />
+            <Select
+              placeholder="teacher"
+              onChange={onChangeLabel}
+              allowClear
+              value={sponsorshipSearch.search.memberId}
+              className="w-[350px]"
+              options={teacherList}
+            />
+            <Switch
+              value={sponsorshipSearch?.isActive}
+              className="ml-2 w-[10px]"
+              onChange={(checked, e) => {
+                scrollToTopTable();
+                setIsLoadMoreData(true);
+                setSponsorshipSearch({
+                  ...sponsorshipSearch,
+                  limit: 30,
+                  skip: 0,
+                  isActive: checked,
+                });
+              }}
+              loading={isLoading}
+            />
           </div>
-          <Button
-            className="ml-2"
-            type="primary"
-            onClick={onAdd}
-            style={{ zoom: isMobile && "0.9" }}
-          >
-            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Topic"}
+          <Button className="ml-2" type="primary" onClick={onAdd}>
+            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Council"}
           </Button>
         </div>
       </div>
       <div className="p-[10px]">
-        <div
-          className={`user-list ${isMobile ? "mt-[80px] p-0 border-none" : ""}`}
-        >
-          {isMobile ? (
-            <div
-              className={`flex flex-col gap-3 overflow-y-auto p-2 max-h-[78%]`}
-              ref={tableRef}
-            >
-              {councilList?.map((user, index) => (
-                <div
-                  key={user?.userId}
-                  className={`flex items-start gap-4 p-4 rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition cursor-pointer relative ${getSelectedColor(user)}`}
-                  onDoubleClick={() => onDoubleClick(user)}
-                  // ref={index === userList?.length - 1 ? lastRecordRef : null}
-                >
-                  {/* <CustomAvatar
-                    className="w-14 h-14 rounded-full object-cover border"
-                    person={user}
-                  /> */}
-                  <div className="w-full">
-                    <div className="flex-1">
-                      {user?.name && (
-                        <div className="font-semibold text-[16px] text-gray-800 flex justify-between">
-                          <span>{user?.name}</span>
-                          <div>
-                            <span
-                              className={`px-[5px] text-sm rounded-full ${
-                                user?.isActive
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}
-                            >
-                              {user?.isActive ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {user?.email && (
-                        <div className="text-sm text-gray-500">
-                          {" "}
-                          {user?.email}
-                        </div>
-                      )}
-
-                      <div className="text-sm text-gray-600 mt-1 space-y-1">
-                        {user?.userCode && (
-                          <div>
-                            <strong>User code:</strong> {user?.userCode}
-                          </div>
-                        )}
-                        {user?.phone && (
-                          <div>
-                            <strong>Phone:</strong> {user?.phone}
-                          </div>
-                        )}
-                        {user?.birthday && (
-                          <div>
-                            <strong>Birthday:</strong> {user?.birthday}
-                          </div>
-                        )}
-                        {user?.roleCode && (
-                          <div>
-                            <strong>Role:</strong> {user?.roleCode}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      {user?.isActive && (
-                        <Button
-                          type="primary"
-                          danger
-                          icon={<FiTrash className="text-red-500" />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsRemoveUserModal(true);
-                            setRemovingUserId(user?.userId);
-                          }}
-                          className="flex-1"
-                        >
-                          Xóa
-                        </Button>
-                      )}
-                      <Button
-                        type="primary"
-                        icon={<FiEdit2 />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDoubleClick(user);
-                        }}
-                        className="flex-1"
-                      >
-                        Chỉnh sửa
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="" ref={tableRef}>
-              <Table
-                columns={columns}
-                dataSource={councilList}
-                // pagination={false}
-                loading={isLoading}
-                size={"middle"}
-                className="max-h-[1000px]"
-                rowClassName={rowClassName}
-                onRow={(record, index) => ({
-                  onDoubleClick: (e) => onDoubleClick(record),
-                  className: getSelectedColor(record),
-                  // ref:
-                  //   isLoadMoreData && index === userList?.length - 1
-                  //     ? lastRecordRef
-                  //     : null,
-                })}
-                scroll={
-                  isMobile
-                    ? {
-                        x: 700,
-                        y: 420,
-                      }
-                    : {
-                        x: 1000,
-                        y: 700,
-                      }
-                }
-              />
-            </div>
-          )}
+        <div className={`user-list`}>
+          <div className="" ref={tableRef}>
+            <Table
+              columns={columns}
+              dataSource={sponsorshipList}
+              pagination={pagination}
+              onChange={handleTableChange}
+              loading={isLoading}
+              size={"middle"}
+              className="max-h-[1000px]"
+              rowClassName={rowClassName}
+              onRow={(record, index) => ({
+                onDoubleClick: (e) => onDoubleClick(record),
+                className: getSelectedColor(record),
+              })}
+              scroll={{
+                x: 1000,
+                y: 700,
+              }}
+            />
+          </div>
         </div>
       </div>
       {isRemoveUserModal && (
@@ -537,16 +357,19 @@ const SponsorshipManagement = () => {
           isModalOpen={isOpenUserModal}
           cancelModal={cancelCreateModal}
           title={
-            selectedCouncil
-              ? languageMap?.["as.menu.user.update.title"] ?? "Update Topic"
-              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create Topic"
+            selectedSponsorship
+              ? languageMap?.["as.menu.user.update.title"] ?? "Update Council"
+              : languageMap?.["as.menu.user.btnCreateUser"] ?? "Create Council"
           }
-          // setUserList={setUserList}
-          // userList={userList}
-          selectedCouncil={selectedCouncil}
+          selectedSponsorship={selectedSponsorship}
           setIsOpenModalResetPW={setIsOpenModalResetPW}
-          isActive={topicSearch?.isActive}
-          setCouncilList={setCouncilList}
+          setSponsorshipList={setSponsorshipList}
+          sponsorshipList={sponsorshipList}
+          setPagination={setPagination}
+          pagination={pagination}
+          setSponsorshipSearch={setSponsorshipSearch}
+          sponsorshipSearch={sponsorshipSearch}
+          setHighLight={setHighLight}
         />
       )}
     </div>

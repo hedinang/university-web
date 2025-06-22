@@ -9,6 +9,8 @@ import apiFactory from "../../api";
 import { useInfoUser } from "../../store/UserStore";
 import { CommentModal } from "../modal/CommentModal";
 
+const pageSize = 20;
+
 const CommentDetail = ({ comment, commentList, setCommentList }) => {
   const { user, languageMap } = useInfoUser();
   const deleteComment = async () => {
@@ -68,18 +70,17 @@ const SideBarQuestion = ({ isOpen, selectedQuestion, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isComment, setIsComment] = useState(false);
   const [commentSearch, setCommentSearch] = useState({
-    limit,
+    limit: pageSize,
     page: 1,
-    userName: null,
-    isActive: true,
+    search: {
+      questionId: selectedQuestion?.questionId,
+    },
   });
 
   const fetchCommentList = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
-    let data = [];
-
     try {
       const result = await apiFactory.commentApi.getCommentList(commentSearch);
 
@@ -106,16 +107,26 @@ const SideBarQuestion = ({ isOpen, selectedQuestion, onClose }) => {
     } finally {
       setIsLoading(false);
 
-      setCommentSearch((prev) => ({
-        ...prev,
-        skip: prev?.skip + data.length,
-      }));
+      // setCommentSearch((prev) => ({
+      //   ...prev,
+      //   skip: prev?.skip + data.length,
+      // }));
     }
   };
 
   useEffect(() => {
     fetchCommentList();
-  }, []);
+  }, [commentSearch?.search]);
+
+  useEffect(() => {
+    setCommentSearch({
+      limit: pageSize,
+      page: 1,
+      search: {
+        questionId: selectedQuestion?.questionId,
+      },
+    });
+  }, [selectedQuestion]);
 
   return (
     <>
@@ -167,6 +178,10 @@ const SideBarQuestion = ({ isOpen, selectedQuestion, onClose }) => {
             </Col>
           </Row>
           <hr className="my-3" />
+          {!commentList?.length && (
+            <div className="text-center">No comments</div>
+          )}
+
           {commentList.map((comment) => (
             <CommentDetail
               comment={comment}

@@ -23,3 +23,5 @@ export const PROJECT = "/api/project";
 export const ATTRIBUTE_TEMPLATE = "/api/attribute-template";
 export const TASK = "/api/task";
 export const PROJECT_PROGRESS = "/api/project-progress";
+export const SPONSORSHIP = "/api/sponsorship";
+export const SEEN = "/api/seen";

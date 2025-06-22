@@ -7,6 +7,7 @@ import { TopiclManagement } from "../pages/adminSetting/TopicManagement/TopicMan
 import { UserManagement } from "../pages/adminSetting/UserManagement/UserManagement";
 import Login from "../pages/login";
 import { Registration } from "../pages/registration/Registration";
+import { SponsorshipManagement } from "../pages/adminSetting/SponsorshipManagement/SponsorshipManagement";
 
 const router = createBrowserRouter([
   {
@@ -43,7 +44,7 @@ const router = createBrowserRouter([
       },
       {
         path: "sponsorship",
-        element: <QuestionManagement />,
+        element: <SponsorshipManagement />,
       },
     ],
   },

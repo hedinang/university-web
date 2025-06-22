@@ -141,6 +141,8 @@ const QuestionManagement = () => {
       dataIndex: "unread",
       key: "unread",
       render: (unread, record) => {
+        if (unread === 0) return;
+
         return (
           <div className="bg-[red] w-[30px] h-[30px] rounded-[50%] text-white flex justify-center items-center">
             {unread < 99 ? unread : `${unread}+`}
@@ -149,10 +151,6 @@ const QuestionManagement = () => {
       },
     },
   ];
-
-  const handleResize = () => {
-    setIsMobile(window.innerWidth < 860);
-  };
 
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
@@ -228,9 +226,28 @@ const QuestionManagement = () => {
     }
   };
 
+  const resetUnread = async (record) => {
+    const result = await apiFactory.seenApi.resetUnread({
+      questionId: record?.questionId,
+    });
+
+    if (result?.status !== 200) {
+      toast.error(result?.message);
+      return;
+    }
+
+    const questionIndex = questionList?.findIndex(
+      (qt) => qt?.questionId === record?.questionId
+    );
+
+    questionList[questionIndex].unread = 0;
+    setQuestionList([...questionList]);
+  };
+
   const onDoubleClick = (record) => {
+    resetUnread(record);
     setSelectedQuestion(record);
-    setHighLight(record?.questionId);
+    // setHighLight(record?.questionId);
     setIsOpenTimelineDetail(true);
   };
 
@@ -281,19 +298,6 @@ const QuestionManagement = () => {
   useEffect(() => {
     fetchQuestionList();
   }, [questionSearch?.search, questionSearch?.page, highLight]);
-
-  // useEffect(() => {
-  //   if (!selectedQuestion) return;
-
-  //   const selectedIndex = questionList?.findIndex(
-  //     (q) => q?.questionId === selectedQuestion?.questionId
-  //   );
-
-  //   if (selectedIndex === -1) return;
-
-  //   questionList[selectedIndex].selected = true;
-  //   setQuestionList([...questionList]);
-  // }, [selectedQuestion]);
 
   return (
     <div>
