@@ -165,77 +165,77 @@ const SideBar = () => {
     setShowProfile(false);
   };
 
-  const renderLayoutProfileMobile = () => {
-    const resultComponent = (
-      <Modal
-        title="My profile"
-        open={showProfile}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        footer={false}
-      >
-        <div className="profile " ref={infoRef}>
-          <div className="flex bg-[#e2e3e5] p-2 w-full">
-            <div className="me-3">
-              <div className="relative avatarWrapper inline-block ">
-                <Avatar
-                  style={{
-                    backgroundColor: getColorFromInitial(user?.name[0]),
-                    color: getColor(user?.name[0]),
-                  }}
-                  size={80}
-                  src={user?.avatar ? getAvatar(user) : null}
-                >
-                  {user?.name[0]}
-                </Avatar>
-              </div>
-            </div>
-            <div>
-              <div>
-                <h3 className="text-base text-[#23497c] font-bold ">
-                  {user?.name}
-                </h3>
-              </div>
-              <div className="mt-1">
-                <h6 className="text-xs text-[#23497c] break-all">
-                  {user?.userId}
-                </h6>
-              </div>
-              <div className="mt-1">
-                <h6 className="text-xs text-[#23497c] break-all">
-                  {user?.email}
-                </h6>
-              </div>
-              <div className="mt-1">
-                <h6 className="text-xs text-[#23497c] break-all">
-                  {user?.phone}
-                </h6>
-              </div>
-            </div>
-          </div>
+  // const renderLayoutProfileMobile = () => {
+  //   const resultComponent = (
+  //     <Modal
+  //       title="My profile"
+  //       open={showProfile}
+  //       onOk={handleOk}
+  //       onCancel={handleCancel}
+  //       footer={false}
+  //     >
+  //       <div className="profile " ref={infoRef}>
+  //         <div className="flex bg-[#e2e3e5] p-2 w-full">
+  //           <div className="me-3">
+  //             <div className="relative avatarWrapper inline-block ">
+  //               <Avatar
+  //                 style={{
+  //                   backgroundColor: getColorFromInitial(user?.name[0]),
+  //                   color: getColor(user?.name[0]),
+  //                 }}
+  //                 size={80}
+  //                 src={user?.avatar ? getAvatar(user) : null}
+  //               >
+  //                 {user?.name[0]}
+  //               </Avatar>
+  //             </div>
+  //           </div>
+  //           <div>
+  //             <div>
+  //               <h3 className="text-base text-[#23497c] font-bold ">
+  //                 {user?.name}
+  //               </h3>
+  //             </div>
+  //             <div className="mt-1">
+  //               <h6 className="text-xs text-[#23497c] break-all">
+  //                 {user?.userId}
+  //               </h6>
+  //             </div>
+  //             <div className="mt-1">
+  //               <h6 className="text-xs text-[#23497c] break-all">
+  //                 {user?.email}
+  //               </h6>
+  //             </div>
+  //             <div className="mt-1">
+  //               <h6 className="text-xs text-[#23497c] break-all">
+  //                 {user?.phone}
+  //               </h6>
+  //             </div>
+  //           </div>
+  //         </div>
 
-          <Divider className=" mt-0" />
-          <div
-            className="cursor-pointer profile-item"
-            onClick={() => setIsModalProfileOpen(true)}
-          >
-            {languageMap?.["menu.profile.myProfile"] ?? "My Profile"}
-          </div>
-          <div
-            className="cursor-pointer profile-item"
-            onClick={openModalSettings}
-          >
-            {languageMap?.["menu.profile.setting"] ?? "Setting"}
-          </div>
-          <Divider />
-          <div className="cursor-pointer profile-item" onClick={logout}>
-            {languageMap?.["menu.profile.logout"] ?? "Logout"}
-          </div>
-        </div>
-      </Modal>
-    );
-    return resultComponent;
-  };
+  //         <Divider className=" mt-0" />
+  //         <div
+  //           className="cursor-pointer profile-item"
+  //           onClick={() => setIsModalProfileOpen(true)}
+  //         >
+  //           {languageMap?.["menu.profile.myProfile"] ?? "My Profile"}
+  //         </div>
+  //         <div
+  //           className="cursor-pointer profile-item"
+  //           onClick={openModalSettings}
+  //         >
+  //           {languageMap?.["menu.profile.setting"] ?? "Setting"}
+  //         </div>
+  //         <Divider />
+  //         <div className="cursor-pointer profile-item" onClick={logout}>
+  //           {languageMap?.["menu.profile.logout"] ?? "Logout"}
+  //         </div>
+  //       </div>
+  //     </Modal>
+  //   );
+  //   return resultComponent;
+  // };
 
   const featureList = [
     {
@@ -531,11 +531,11 @@ const SideBar = () => {
                     {user?.name}
                   </h3>
                 </div>
-                <div className="mt-1">
+                {/* <div className="mt-1">
                   <h6 className="text-xs text-[#23497c] break-all">
                     {user?.userId}
                   </h6>
-                </div>
+                </div> */}
                 <div className="mt-1">
                   <h6 className="text-xs text-[#23497c] break-all">
                     {user?.email}

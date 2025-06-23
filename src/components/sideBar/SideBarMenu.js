@@ -293,11 +293,11 @@ const SideBarMenu = () => {
                   {user?.name}
                 </h3>
               </div>
-              <div className="mt-1">
+              {/* <div className="mt-1">
                 <h6 className="text-xs text-[#23497c] break-all">
                   {user?.userId}
                 </h6>
-              </div>
+              </div> */}
               <div className="mt-1">
                 <h6 className="text-xs text-[#23497c] break-all">
                   {user?.email}

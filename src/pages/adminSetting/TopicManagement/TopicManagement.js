@@ -63,6 +63,7 @@ const TopiclManagement = () => {
             title: `${languageMap?.["as.menu.user.table.email"] ?? "Student"}`,
             dataIndex: "proposerName",
             key: "proposerName",
+            width: 300,
           },
         ]
       : [
@@ -70,32 +71,38 @@ const TopiclManagement = () => {
             title: `${languageMap?.["as.menu.user.table.email"] ?? "Teacher"}`,
             dataIndex: "approverName",
             key: "approverName",
+            width: 300,
           },
         ]),
     {
       title: `${languageMap?.["as.menu.user.table.email"] ?? "Topic type"}`,
       dataIndex: "topicType",
       key: "topicType",
+      width: 200,
     },
     {
       title: `${languageMap?.["as.menu.user.table.email"] ?? "Start time"}`,
       dataIndex: "startTime",
       key: "startTime",
+      width: 200,
     },
     {
       title: `${languageMap?.["as.menu.user.table.email"] ?? "End time"}`,
       dataIndex: "endTime",
       key: "endTime",
+      width: 200,
     },
     {
       title: `${languageMap?.["as.menu.user.table.email"] ?? "Progress"}`,
       dataIndex: "progress",
       key: "progress",
+      width: 100,
     },
     {
       title: `${languageMap?.["as.menu.user.table.email"] ?? "Score"}`,
       dataIndex: "score",
       key: "score",
+      width: 100,
     },
   ];
 
@@ -181,7 +188,8 @@ const TopiclManagement = () => {
   };
 
   const getSelectedColor = (record) => {
-    if (record?.topicId === selectedTopic?.topicId) return "highlighted-row-clicked";
+    if (record?.topicId === selectedTopic?.topicId)
+      return "highlighted-row-clicked";
   };
 
   const scrollToTopTable = () => {
@@ -295,7 +303,7 @@ const TopiclManagement = () => {
             <Popover
               content={
                 languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                "Search user code, username, email"
+                "Search title"
               }
               trigger="hover"
             >
@@ -303,7 +311,7 @@ const TopiclManagement = () => {
                 className="w-full"
                 placeholder={
                   languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                  "Search user code, username, email"
+                  "Search title"
                 }
                 onChange={(e) => debouncedTextSearch(e)}
                 allowClear

@@ -199,13 +199,13 @@ const CreateTopicModal = ({
         <Form.Item
           name="startTime"
           label={languageMap?.["as.menu.user.update.name"] ?? "Start time"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-          ]}
+          // rules={[
+          //   {
+          //     required: true,
+          //     message:
+          //       languageMap?.["as.menu.user.message.required"] ?? "Required!",
+          //   },
+          // ]}
         >
           <DatePicker
             format="DD-MM-YYYY"
@@ -215,13 +215,13 @@ const CreateTopicModal = ({
         <Form.Item
           name="endTime"
           label={languageMap?.["as.menu.user.update.name"] ?? "End time"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-          ]}
+          // rules={[
+          //   {
+          //     required: true,
+          //     message:
+          //       languageMap?.["as.menu.user.message.required"] ?? "Required!",
+          //   },
+          // ]}
         >
           <DatePicker
             format="DD-MM-YYYY"
@@ -231,28 +231,48 @@ const CreateTopicModal = ({
         <Form.Item
           name="progress"
           label={languageMap?.["as.menu.user.update.name"] ?? "Progress"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-          ]}
+          // rules={[
+          //   {
+          //     required: true,
+          //     message:
+          //       languageMap?.["as.menu.user.message.required"] ?? "Required!",
+          //   },
+          // ]}
         >
-          <NumericFormat customInput={Input} />
+          <NumericFormat
+            customInput={Input}
+            isAllowed={(values) => {
+              const { floatValue } = values;
+              return (
+                floatValue === undefined ||
+                (Number.isInteger(floatValue) &&
+                  floatValue >= 0 &&
+                  floatValue <= 100)
+              );
+            }}
+          />
         </Form.Item>
         <Form.Item
           name="score"
           label={languageMap?.["as.menu.user.update.name"] ?? "Score"}
-          rules={[
-            {
-              required: true,
-              message:
-                languageMap?.["as.menu.user.message.required"] ?? "Required!",
-            },
-          ]}
+          // rules={[
+          //   {
+          //     required: true,
+          //     message:
+          //       languageMap?.["as.menu.user.message.required"] ?? "Required!",
+          //   },
+          // ]}
         >
-          <NumericFormat customInput={Input} />
+          <NumericFormat
+            customInput={Input}
+            isAllowed={(values) => {
+              const { floatValue } = values;
+              return (
+                floatValue === undefined ||
+                (floatValue >= 0 && floatValue <= 10)
+              );
+            }}
+          />
         </Form.Item>
         <Form.Item
           name="status"
