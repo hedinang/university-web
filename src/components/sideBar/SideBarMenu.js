@@ -13,13 +13,15 @@ import { useInfoUser } from "../../store/UserStore";
 import { getAvatar, getColor, getColorFromInitial } from "../../utils/Utils";
 import { CustomAvatar } from "../avatar/CustomAvatar";
 import "./style.scss";
+import { ProfileModal } from "../modal/ProfileModal";
 
 const REACT_APP_AUTHENTICATION_WEB =
   process.env.REACT_APP_AUTHENTICATION_WEB || "http://localhost:4005";
 
 const SideBarMenu = () => {
   const [isMobile, setIsMobile] = useState(false);
-  // const [showProfile, setShowProfile] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [isModalProfileOpen, setIsModalProfileOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState("chat");
   const infoRef = useRef(null);
   const navigate = useNavigate();
@@ -242,6 +244,10 @@ const SideBarMenu = () => {
     window.location.href = REACT_APP_AUTHENTICATION_WEB + "/login";
   };
 
+  const closeProfilerModal = () => {
+    setIsModalProfileOpen(false);
+  };
+
   useEffect(() => {
     setActiveFeature(location?.pathname.split("/")[1]);
   }, [location]);
@@ -319,7 +325,7 @@ const SideBarMenu = () => {
           <Divider className=" mt-0" />
           <button
             className="profile-item"
-            // onClick={() => setIsModalProfileOpen(true)}
+            onClick={() => setIsModalProfileOpen(true)}
           >
             {languageMap?.["menu.profile.myProfile"] ?? "My Profile"}
           </button>
@@ -334,6 +340,12 @@ const SideBarMenu = () => {
             {languageMap?.["menu.profile.logout"] ?? "Logout"}
           </button>
         </div>
+      )}
+      {isModalProfileOpen && (
+        <ProfileModal
+          closeModal={closeProfilerModal}
+          isModalOpen={isModalProfileOpen}
+        />
       )}
     </Layout.Sider>
   );

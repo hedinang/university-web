@@ -30,7 +30,7 @@ class UserApi extends BaseApi {
     return this.post(`${USER}/find`, param);
   }
   upload(file) {
-    return this.post(`${USER}/upload`, file);
+    return this.post(`${USER}/upload-profile-image`, file);
   }
 
   saveMe(param) {
@@ -43,6 +43,10 @@ class UserApi extends BaseApi {
 
   resetPassword(param) {
     return this.post(`${USER}/admin/reset-password/${param}`);
+  }
+
+  remove(file) {
+    return this.post(`${USER}/remove-profile-image`, file);
   }
 }
 export default UserApi;

@@ -139,16 +139,11 @@ function getColor(initial) {
   return colors[initial?.toUpperCase()] || "#f56a00";
 }
 
-const fileStore = process.env.REACT_APP_FILE_STORE || "http://10.1.1.230:8000";
+const fileStore =
+  process.env.REACT_APP_FILE_STORE || "http://localhost:9000/media/";
 const getAvatar = (user) => {
   if (!user?.avatar) return null;
-  const url =
-    fileStore +
-    "/user/" +
-    user.userId +
-    user.avatar +
-    "?token=" +
-    Cookies.get("access_token");
+  const url = fileStore + user.avatar;
   return url;
 };
 export {
