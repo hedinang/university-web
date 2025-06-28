@@ -6,6 +6,10 @@ class TopicApi extends BaseApi {
     return this.post(`${TOPIC}/page`, param);
   }
 
+    getAll(param) {
+      return this.post(`${TOPIC}/all`, param);
+    }
+
   storeTopic(param) {
     return this.post(`${TOPIC}/store`, param);
   }

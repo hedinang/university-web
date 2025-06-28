@@ -29,7 +29,7 @@ const columns = [
       return (
         <Row>
           {members?.map((m) => (
-            <Col span={8}>
+            <Col span={8} key={m?.userId}>
               <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
                 {m?.name}
               </Tag>

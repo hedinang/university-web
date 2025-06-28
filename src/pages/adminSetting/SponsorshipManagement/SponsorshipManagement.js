@@ -1,9 +1,9 @@
-import { Button, Col, Input, Row, Select, Switch, Table, Tag } from "antd";
+import { Button, Col, Input, Row, Switch, Table, Tag } from "antd";
 import { debounce } from "lodash";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import apiFactory from "../../../api";
-import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
+import { CreateSponsorshipModal } from "../../../components/modal/adminSetting/CreateSponsorshipModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
@@ -18,17 +18,35 @@ const columns = [
     title: "Council Name",
     dataIndex: "councilName",
     key: "councilName",
+    width: "150px",
   },
   {
-    title: "Budget",
-    dataIndex: "budget",
-    key: "budget",
-    width: "300px",
-    render: (members, record) => {
+    title: "Student",
+    dataIndex: "proposer",
+    key: "proposer",
+    render: (proposer, record) => {
+      return proposer?.name;
+    },
+    width: "150px",
+  },
+  {
+    title: "Teacher",
+    dataIndex: "approver",
+    key: "approver",
+    render: (approver, record) => {
+      return approver?.name;
+    },
+    width: "150px",
+  },
+  {
+    title: "Council list",
+    dataIndex: "memberList",
+    key: "memberList",
+    render: (memberList, record) => {
       return (
         <Row>
-          {members?.map((m) => (
-            <Col span={8}>
+          {memberList?.map((m) => (
+            <Col span={8} key={m?.userId}>
               <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
                 {m?.name}
               </Tag>
@@ -37,6 +55,14 @@ const columns = [
         </Row>
       );
     },
+    width: "500px",
+  },
+
+  {
+    title: "Budget",
+    dataIndex: "budget",
+    key: "budget",
+    width: "150px",
   },
 ];
 const pageSize = 4;
@@ -59,8 +85,6 @@ const SponsorshipManagement = () => {
     page: 1,
     search: {
       councilName: null,
-      year: null,
-      memberId: null,
       status: "ACTIVE",
     },
   });
@@ -70,8 +94,6 @@ const SponsorshipManagement = () => {
     current: 1,
     pageSize: pageSize,
   });
-
-  const [teacherList, setTeacherList] = useState([]);
 
   const tableRef = useRef(null);
 
@@ -91,7 +113,8 @@ const SponsorshipManagement = () => {
 
     setIsLoading(true);
     try {
-      const result = await apiFactory.sponsorshipApi.getSponsorshipList(sponsorshipSearch);
+      const result =
+        await apiFactory.sponsorshipApi.getSponsorshipList(sponsorshipSearch);
 
       if (result?.status === 200) {
         if (highLight) {
@@ -110,28 +133,6 @@ const SponsorshipManagement = () => {
           ...pagination,
           total: result?.data?.totalItems,
         });
-      }
-    } catch (error) {
-      console.error("Error fetching project data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchTeacherList = async () => {
-    try {
-      setIsLoading(true);
-      const result = await apiFactory.userApi.listPerson({
-        role: "TEACHER",
-      });
-
-      if (result?.status === 200) {
-        setTeacherList(
-          result?.data?.map((r) => ({
-            value: r?.userId,
-            label: r?.name,
-          }))
-        );
       }
     } catch (error) {
       console.error("Error fetching project data:", error);
@@ -233,35 +234,15 @@ const SponsorshipManagement = () => {
     setSponsorshipSearch({ ...sponsorshipSearch, page: value.current });
   };
 
-  const onChangeLabel = (value) => {
-    setPagination((prev) => ({
-      total: 0,
-      current: 1,
-      pageSize: pageSize,
-    }));
-
-    setSponsorshipSearch({
-      ...sponsorshipSearch,
-      search: {
-        ...sponsorshipSearch.search,
-        memberId: value,
-      },
-    });
-  };
-
   useEffect(() => {
     fetchSponsorshipList();
   }, [sponsorshipSearch?.search, sponsorshipSearch?.page, highLight]);
-
-  useEffect(() => {
-    fetchTeacherList();
-  }, []);
 
   return (
     <div>
       <div className={`flex flex-col w-full p-[10px]`}>
         <div className="font-semibold text-[20px]   flex items-center">
-          {languageMap?.["as.menu.user?.title"] ?? "Council"}
+          {languageMap?.["as.menu.user?.title"] ?? "Sponsorship"}
         </div>
 
         <div className="flex justify-between mb-[10px]">
@@ -270,18 +251,10 @@ const SponsorshipManagement = () => {
               className="w-full mr-2"
               placeholder={
                 languageMap?.["as.menu.user?.placeHolderSearch"] ??
-                "Search council name"
+                "Search council name or topic name"
               }
               onChange={(e) => debouncedCounciName(e)}
               allowClear
-            />
-            <Select
-              placeholder="teacher"
-              onChange={onChangeLabel}
-              allowClear
-              value={sponsorshipSearch.search.memberId}
-              className="w-[350px]"
-              options={teacherList}
             />
             <Switch
               value={sponsorshipSearch?.isActive}
@@ -300,7 +273,8 @@ const SponsorshipManagement = () => {
             />
           </div>
           <Button className="ml-2" type="primary" onClick={onAdd}>
-            {languageMap?.["as.menu.user?.btnCreateUser"] ?? "Create Council"}
+            {languageMap?.["as.menu.user?.btnCreateUser"] ??
+              "Create Sponsorship"}
           </Button>
         </div>
       </div>
@@ -353,7 +327,7 @@ const SponsorshipManagement = () => {
         />
       )}
       {isOpenUserModal && (
-        <CreateCouncilModal
+        <CreateSponsorshipModal
           isModalOpen={isOpenUserModal}
           cancelModal={cancelCreateModal}
           title={

@@ -1,12 +1,16 @@
-import BaseApi from "./baseApi";
 import { COUNCIL } from "./apiConstant";
+import BaseApi from "./baseApi";
 
 class CouncilApi extends BaseApi {
   getCouncilList(param) {
     return this.post(`${COUNCIL}/page`, param);
   }
 
-  storeCouncil(param){
+  getAll(param) {
+    return this.post(`${COUNCIL}/all`, param);
+  }
+
+  storeCouncil(param) {
     return this.post(`${COUNCIL}/store`, param);
   }
 }
