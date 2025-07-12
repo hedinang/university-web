@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { CreateTopicModal } from "../../../components/modal/adminSetting/CreateTopicModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { ProfileDetail } from "../../../components/modal/ProfileDetail";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
 
@@ -28,6 +29,8 @@ const TopiclManagement = () => {
   const [highLight, setHighLight] = useState(null);
   const [teacherList, setTeacherList] = useState([]);
   const [studentList, setStudentList] = useState([]);
+  const [viewProfileId, setViewProfileId] = useState();
+
   const [topicSearch, setTopicSearch] = useState({
     limit: pageSize,
     page: 1,
@@ -64,6 +67,18 @@ const TopiclManagement = () => {
             dataIndex: "proposerName",
             key: "proposerName",
             width: 300,
+            render: (text, record) => {
+              return (
+                <button
+                  className="text-[blue] underline"
+                  onClick={() => {
+                    setViewProfileId(record?.approverId);
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            },
           },
         ]
       : [
@@ -72,6 +87,18 @@ const TopiclManagement = () => {
             dataIndex: "approverName",
             key: "approverName",
             width: 300,
+            render: (text, record) => {
+              return (
+                <button
+                  className="text-[blue] underline"
+                  onClick={() => {
+                    setViewProfileId(record?.approverId);
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            },
           },
         ]),
     {
@@ -283,6 +310,10 @@ const TopiclManagement = () => {
     setTopicSearch({ ...topicSearch, page: value.current });
   };
 
+  const cancelModal = () => {
+    setViewProfileId(null);
+  };
+
   useEffect(() => {
     fetchTopicList();
   }, [topicSearch?.search, topicSearch?.page, highLight]);
@@ -431,6 +462,12 @@ const TopiclManagement = () => {
           pagination={pagination}
           setTopicSearch={setTopicSearch}
           setHighLight={setHighLight}
+        />
+      )}
+      {viewProfileId && (
+        <ProfileDetail
+          viewProfileId={viewProfileId}
+          cancelModal={cancelModal}
         />
       )}
     </div>

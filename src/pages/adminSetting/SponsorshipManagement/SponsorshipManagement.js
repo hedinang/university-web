@@ -5,66 +5,10 @@ import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { CreateSponsorshipModal } from "../../../components/modal/adminSetting/CreateSponsorshipModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { ProfileDetail } from "../../../components/modal/ProfileDetail";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
 
-const columns = [
-  {
-    title: "Topic Name",
-    dataIndex: "topicName",
-    key: "topicName",
-  },
-  {
-    title: "Council Name",
-    dataIndex: "councilName",
-    key: "councilName",
-    width: "150px",
-  },
-  {
-    title: "Student",
-    dataIndex: "proposer",
-    key: "proposer",
-    render: (proposer, record) => {
-      return proposer?.name;
-    },
-    width: "150px",
-  },
-  {
-    title: "Teacher",
-    dataIndex: "approver",
-    key: "approver",
-    render: (approver, record) => {
-      return approver?.name;
-    },
-    width: "150px",
-  },
-  {
-    title: "Council list",
-    dataIndex: "memberList",
-    key: "memberList",
-    render: (memberList, record) => {
-      return (
-        <Row>
-          {memberList?.map((m) => (
-            <Col span={8} key={m?.userId}>
-              <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
-                {m?.name}
-              </Tag>
-            </Col>
-          ))}
-        </Row>
-      );
-    },
-    width: "500px",
-  },
-
-  {
-    title: "Budget",
-    dataIndex: "budget",
-    key: "budget",
-    width: "150px",
-  },
-];
 const pageSize = 4;
 
 const SponsorshipManagement = () => {
@@ -80,6 +24,90 @@ const SponsorshipManagement = () => {
   const [sponsorshipList, setSponsorshipList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [highLight, setHighLight] = useState(null);
+  const [viewProfileId, setViewProfileId] = useState();
+
+  const columns = [
+    {
+      title: "Topic Name",
+      dataIndex: "topicName",
+      key: "topicName",
+    },
+    {
+      title: "Council Name",
+      dataIndex: "councilName",
+      key: "councilName",
+      width: "150px",
+    },
+    {
+      title: "Student",
+      dataIndex: "proposer",
+      key: "proposer",
+      render: (text, record) => {
+        return (
+          <button
+            className="text-[blue] underline"
+            onClick={() => {
+              setViewProfileId(record?.proposerId);
+            }}
+          >
+            {text?.name}
+          </button>
+        );
+      },
+      width: "150px",
+    },
+    {
+      title: "Teacher",
+      dataIndex: "approver",
+      key: "approver",
+      render: (text, record) => {
+        return (
+          <button
+            className="text-[blue] underline"
+            onClick={() => {
+              setViewProfileId(record?.approverId);
+            }}
+          >
+            {text?.name}
+          </button>
+        );
+      },
+      width: "150px",
+    },
+    {
+      title: "Council list",
+      dataIndex: "memberList",
+      key: "memberList",
+      render: (memberList, record) => {
+        return (
+          <Row>
+            {memberList?.map((m) => (
+              <Col span={8} key={m?.userId}>
+                <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
+                  <button
+                    onClick={() => {
+                      setViewProfileId(m?.userId);
+                    }}
+                  >
+                    {m?.name}
+                  </button>
+                </Tag>
+              </Col>
+            ))}
+          </Row>
+        );
+      },
+      width: "500px",
+    },
+
+    {
+      title: "Budget",
+      dataIndex: "budget",
+      key: "budget",
+      width: "150px",
+    },
+  ];
+
   const [sponsorshipSearch, setSponsorshipSearch] = useState({
     limit: pageSize,
     page: 1,
@@ -225,6 +253,10 @@ const SponsorshipManagement = () => {
     }));
   }, 500);
 
+  const cancelModal = () => {
+    setViewProfileId(null);
+  };
+
   const handleTableChange = (value) => {
     setPagination((prev) => ({
       ...prev,
@@ -344,6 +376,12 @@ const SponsorshipManagement = () => {
           setSponsorshipSearch={setSponsorshipSearch}
           sponsorshipSearch={sponsorshipSearch}
           setHighLight={setHighLight}
+        />
+      )}
+      {viewProfileId && (
+        <ProfileDetail
+          viewProfileId={viewProfileId}
+          cancelModal={cancelModal}
         />
       )}
     </div>

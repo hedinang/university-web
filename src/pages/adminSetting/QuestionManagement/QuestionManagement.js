@@ -12,6 +12,7 @@ import "./style.scss";
 // import { CustomAvatar } from "../../../components/avatar/CustomAvatar";
 import TextArea from "antd/es/input/TextArea";
 import { CreateQuestionModal } from "../../../components/modal/adminSetting/CreateQuestionModal";
+import { ProfileDetail } from "../../../components/modal/ProfileDetail";
 import { formatDate } from "../../../utils/formatTime";
 
 const pageSize = 4;
@@ -85,6 +86,8 @@ const QuestionManagement = () => {
     },
   });
 
+  const [viewProfileId, setViewProfileId] = useState();
+
   const [pagination, setPagination] = useState({
     total: 0,
     current: 1,
@@ -106,6 +109,18 @@ const QuestionManagement = () => {
             title: `${languageMap?.["as.menu.user.table.name"] ?? "Student name"}`,
             dataIndex: "questionerName",
             key: "questionerName",
+            render: (text, record) => {
+              return (
+                <button
+                  className="text-[blue] underline"
+                  onClick={() => {
+                    setViewProfileId(record?.questionerId);
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            },
           },
         ]
       : [
@@ -113,6 +128,18 @@ const QuestionManagement = () => {
             title: `${languageMap?.["as.menu.user.table.name"] ?? "Teacher name"}`,
             dataIndex: "recipientName",
             key: "recipientName",
+            render: (text, record) => {
+              return (
+                <button
+                  className="text-[blue] underline"
+                  onClick={() => {
+                    setViewProfileId(record?.recipientId);
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            },
           },
         ]),
     {
@@ -151,6 +178,10 @@ const QuestionManagement = () => {
       },
     },
   ];
+
+  const cancelModal = () => {
+    setViewProfileId(null);
+  };
 
   const cancelCreateModal = () => {
     setIsRemoveUserModal(false);
@@ -453,6 +484,12 @@ const QuestionManagement = () => {
           pagination={pagination}
           setQuestionSearch={setQuestionSearch}
           setHighLight={setHighLight}
+        />
+      )}
+      {viewProfileId && (
+        <ProfileDetail
+          viewProfileId={viewProfileId}
+          cancelModal={cancelModal}
         />
       )}
     </div>

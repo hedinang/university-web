@@ -5,41 +5,10 @@ import { toast } from "react-toastify";
 import apiFactory from "../../../api";
 import { CreateCouncilModal } from "../../../components/modal/adminSetting/CreateCouncilModal";
 import { GeneralModal } from "../../../components/modal/GeneralModal";
+import { ProfileDetail } from "../../../components/modal/ProfileDetail";
 import { useInfoUser } from "../../../store/UserStore";
 import "./style.scss";
 
-const columns = [
-  {
-    title: "Council Name",
-    dataIndex: "councilName",
-    key: "councilName",
-    width: "500px",
-  },
-  {
-    title: "Year",
-    dataIndex: "year",
-    key: "year",
-    width: "100px",
-  },
-  {
-    title: "Member List",
-    dataIndex: "memberList",
-    key: "memberList",
-    render: (members, record) => {
-      return (
-        <Row>
-          {members?.map((m) => (
-            <Col span={8} key={m?.userId}>
-              <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
-                {m?.name}
-              </Tag>
-            </Col>
-          ))}
-        </Row>
-      );
-    },
-  },
-];
 const pageSize = 4;
 
 const CouncilManagement = () => {
@@ -55,6 +24,46 @@ const CouncilManagement = () => {
   const [councilList, setCouncilList] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [highLight, setHighLight] = useState(null);
+  const [viewProfileId, setViewProfileId] = useState();
+
+  const columns = [
+    {
+      title: "Council Name",
+      dataIndex: "councilName",
+      key: "councilName",
+      width: "500px",
+    },
+    {
+      title: "Year",
+      dataIndex: "year",
+      key: "year",
+      width: "100px",
+    },
+    {
+      title: "Member List",
+      dataIndex: "memberList",
+      key: "memberList",
+      render: (members, record) => {
+        return (
+          <Row>
+            {members?.map((m) => (
+              <Col span={8} key={m?.userId}>
+                <Tag color={`${m?.councilRole === "HOST" ? "blue" : "green"}`}>
+                  <button
+                    onClick={() => {
+                      setViewProfileId(m?.userId);
+                    }}
+                  >
+                    {m?.name}
+                  </button>
+                </Tag>
+              </Col>
+            ))}
+          </Row>
+        );
+      },
+    },
+  ];
   const [councilSearch, setCouncilSearch] = useState({
     limit: pageSize,
     page: 1,
@@ -85,6 +94,10 @@ const CouncilManagement = () => {
   const cancelRemoveModal = () => {
     setIsRemoveUserModal(false);
     setRemovingUserId(null);
+  };
+
+  const cancelModal = () => {
+    setViewProfileId(null);
   };
 
   const fetchCouncilList = async () => {
@@ -371,6 +384,12 @@ const CouncilManagement = () => {
           setCouncilSearch={setCouncilSearch}
           councilSearch={councilSearch}
           setHighLight={setHighLight}
+        />
+      )}
+      {viewProfileId && (
+        <ProfileDetail
+          viewProfileId={viewProfileId}
+          cancelModal={cancelModal}
         />
       )}
     </div>
